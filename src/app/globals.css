@@ -1,26 +1,142 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #FAF6F0;
+    --bg-card: #FFFFFF;
+    --text-primary: #58111A; /* Regal Maroon replacing Black */
+    --text-secondary: #7A3B43;
+    --text-muted: #A3757C;
+    --accent-maroon: #58111A;
+    --accent-maroon-dark: #3F0A11;
+    --accent-maroon-light: #7A1926;
+    --accent-gold: #D4AF37;
+    --accent-gold-dark: #B38F24;
+    --border-light: #F0E6D8;
+    --border-maroon: #58111A;
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: var(--text-primary);
+    font-family: var(--font-sans), 'Montserrat', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-serif-luxury {
+    font-family: var(--font-serif), 'Cinzel', 'Cormorant Garamond', Georgia, serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom Luxury Typography & Utilities */
+.font-serif-luxury {
+  font-family: var(--font-serif), 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-sans-luxury {
+  font-family: var(--font-sans), 'Montserrat', system-ui, sans-serif;
+}
+
+.font-script-luxury {
+  font-family: var(--font-script), 'Great Vibes', 'Alex Brush', cursive, serif;
+}
+
+/* Scrollbar in Maroon & Gold */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FFFFFF;
+}
+::-webkit-scrollbar-thumb {
+  background: #58111A;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Glassmorphism & Header */
+.glass-header {
+  background: rgba(255, 255, 255, 0.96);
+  /* Reduced blur - cheaper GPU compositing */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  will-change: backdrop-filter;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(88, 17, 26, 0.15);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #58111A 0%, #D4AF37 50%, #58111A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.maroon-gradient {
+  background: linear-gradient(135deg, #58111A 0%, #3F0A11 100%);
+}
+
+.luxury-card-shadow {
+  box-shadow: 0 20px 40px -15px rgba(88, 17, 26, 0.08);
+}
+
+/* Premium Handwritten Glowing Text Effect */
+/* Uses opacity-only animation — stays on GPU compositor, no repaint */
+.glowing-script-text {
+  color: #D4AF37;
+  text-shadow: 0 0 18px rgba(212, 175, 55, 0.9), 0 0 40px rgba(212, 175, 55, 0.55);
+  will-change: opacity;
+  animation: glowPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes glowPulse {
+  0%   { opacity: 0.88; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.92; }
+}
+
+.hover-zoom-img {
+  /* will-change promotes layer to GPU — no layout/paint during hover */
+  will-change: transform;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.group:hover .hover-zoom-img {
+  transform: scale(1.05);
+}
+
+/* Video Carousel Custom Scrollbar */
+.video-carousel-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.video-carousel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.video-carousel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(88, 17, 26, 0.25);
+  border-radius: 2px;
+}
+.video-carousel-scroll::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+.video-carousel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(88, 17, 26, 0.25) transparent;
+  -ms-overflow-style: none;
+}
+
+/* Video Card Hover Effects */
+.video-card-container {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.video-card-container:hover {
+  transform: translateY(-6px);
 }

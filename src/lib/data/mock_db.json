@@ -1,0 +1,25 @@
+{
+  "users": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "email": "admin@finess.fashion",
+      "passwordHash": "$2b$10$omuNM/13muTxk8xNd973XeQehktGhyRND.NkEu3icou/7TI3Vk4yq",
+      "name": "Admin",
+      "phone": "",
+      "addresses": [],
+      "savedWishlistIds": [],
+      "isAdmin": true
+    },
+    {
+      "id": "5d40e7d5-c9a2-40f9-a3ae-b843b3b72066",
+      "email": "testuser@example.com",
+      "passwordHash": "$2b$10$UXOs.bq23f6sjx63rbHJcOG/23ZHrRofrlEjC1E6lyvoWOde13bRG",
+      "name": "Test User",
+      "phone": "",
+      "addresses": [],
+      "savedWishlistIds": [],
+      "isAdmin": false
+    }
+  ],
+  "orders": []
+}
