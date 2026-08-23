@@ -7,31 +7,80 @@ let client: MongoClient | null = null;
 const MONGODB_URI = process.env.MONGODB_URI;
 let useMock = !MONGODB_URI || MONGODB_URI.includes('your-mongodb-atlas-connection-string');
 
-const DB_FILE = path.join(process.cwd(), 'src/lib/data/mock_db.json');
+const IS_VERCEL = !!process.env.VERCEL;
+const BUNDLED_DB_FILE = path.join(process.cwd(), 'src/lib/data/mock_db.json');
+const DB_FILE = IS_VERCEL ? '/tmp/mock_db.json' : BUNDLED_DB_FILE;
+
+let inMemoryDb: any = null;
 
 function readDb() {
-  if (!fs.existsSync(DB_FILE)) {
-    // Ensure dir exists
-    const dir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], orders: [] }, null, 2), 'utf8');
-    return { users: [], orders: [] };
+  if (inMemoryDb) {
+    return inMemoryDb;
   }
+
+  if (!fs.existsSync(DB_FILE)) {
+    try {
+      const dir = path.dirname(DB_FILE);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      if (IS_VERCEL && fs.existsSync(BUNDLED_DB_FILE)) {
+        const bundledContent = fs.readFileSync(BUNDLED_DB_FILE, 'utf8');
+        fs.writeFileSync(DB_FILE, bundledContent, 'utf8');
+      } else {
+        fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], orders: [] }, null, 2), 'utf8');
+      }
+    } catch (e) {
+      console.warn('⚠️ Writable database file could not be initialized. Initializing in-memory fallback.', e);
+      if (fs.existsSync(BUNDLED_DB_FILE)) {
+        try {
+          inMemoryDb = JSON.parse(fs.readFileSync(BUNDLED_DB_FILE, 'utf8'));
+        } catch (err) {
+          inMemoryDb = { users: [], orders: [] };
+        }
+      } else {
+        inMemoryDb = { users: [], orders: [] };
+      }
+      return inMemoryDb;
+    }
+  }
+
   try {
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    // Ensure admin user is seeded even if file is empty
+    if (!data.users || data.users.length === 0) {
+      data.users = [
+        {
+          id: "00000000-0000-0000-0000-000000000001",
+          email: "admin@finess.fashion",
+          passwordHash: "$2b$10$omuNM/13muTxk8xNd973XeQehktGhyRND.NkEu3icou/7TI3Vk4yq",
+          name: "Admin",
+          phone: "",
+          addresses: [],
+          savedWishlistIds: [],
+          isAdmin: true
+        }
+      ];
+    }
+    inMemoryDb = data;
+    return data;
   } catch (e) {
     return { users: [], orders: [] };
   }
 }
 
 function writeDb(data: any) {
-  const dir = path.dirname(DB_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  inMemoryDb = data;
+  try {
+    const dir = path.dirname(DB_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    console.error('⚠️ Failed to write to database file. Storing in-memory only.', e);
   }
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
 class MockCollection {
