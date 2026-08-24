@@ -9,6 +9,7 @@ import { Product, Order, Coupon, Category, OrderStatus, Size, Poster, VideoProdu
 import { formatINR, saveProducts, getStoredProducts, saveOrders, getStoredOrders, saveCoupons, getStoredCoupons, getStoredPosters, savePosters, getStoredVideos, saveVideos } from '@/lib/store';
 import { Film, ArrowUp, ArrowDown } from 'lucide-react';
 import { Package, ShoppingBag, Users, Tag, Plus, Edit, Trash2, CheckCircle2, ShieldAlert, Sparkles, RefreshCw, X } from 'lucide-react';
+import { CloudinaryUpload } from '@/components/admin/CloudinaryUpload';
 
 export default function AdminPage() {
   const { products, setProducts, showToast } = useStore();
@@ -785,6 +786,10 @@ export default function AdminPage() {
                   onChange={(e) => setNewImage(e.target.value)}
                   className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
                 />
+                <CloudinaryUpload
+                  currentValue={newImage}
+                  onUploadSuccess={(url) => setNewImage(url)}
+                />
               </div>
 
               <div>
@@ -859,6 +864,10 @@ export default function AdminPage() {
               <div>
                 <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Image URL</label>
                 <input type="text" value={newPosterImage} onChange={e => setNewPosterImage(e.target.value)} className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]" />
+                <CloudinaryUpload
+                  currentValue={newPosterImage}
+                  onUploadSuccess={(url) => setNewPosterImage(url)}
+                />
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Primary Button Text</label>
@@ -906,6 +915,10 @@ export default function AdminPage() {
                   value={newVideoThumbnail}
                   onChange={e => setNewVideoThumbnail(e.target.value)}
                   className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                />
+                <CloudinaryUpload
+                  currentValue={newVideoThumbnail}
+                  onUploadSuccess={(url) => setNewVideoThumbnail(url)}
                 />
               </div>
               <div>
