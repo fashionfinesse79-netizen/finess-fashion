@@ -13,12 +13,25 @@ function VideoCard({ video, onPlay }: { video: VideoProduct; onPlay: (video: Vid
         className="relative h-[420px] sm:h-[460px] rounded-2xl overflow-hidden cursor-pointer group shadow-lg border border-[#58111A]/10"
         onClick={() => onPlay(video)}
       >
-        {/* Thumbnail Background */}
-        <img
-          src={video.thumbnailUrl}
-          alt={video.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+        {/* Video or Thumbnail Background */}
+        {video.videoUrl && !video.videoUrl.includes('youtube.com') && !video.videoUrl.includes('youtu.be') ? (
+          <video
+            src={video.videoUrl}
+            poster={video.thumbnailUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <img
+            src={video.thumbnailUrl}
+            alt={video.title}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        )}
+
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
