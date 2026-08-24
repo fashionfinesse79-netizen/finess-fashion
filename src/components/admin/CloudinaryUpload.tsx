@@ -8,13 +8,15 @@ interface CloudinaryUploadProps {
   onUploadError?: (error: string) => void;
   currentValue?: string;
   label?: string;
+  resourceType?: 'image' | 'video';
 }
 
 export function CloudinaryUpload({
   onUploadSuccess,
   onUploadError,
   currentValue,
-  label = 'Upload from Device'
+  label = 'Upload from Device',
+  resourceType = 'image'
 }: CloudinaryUploadProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,10 @@ export function CloudinaryUpload({
       formData.append('file', file);
       formData.append('upload_preset', uploadPreset);
 
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      // Cloudinary routes to /video/upload for videos, /image/upload for images
+      const uploadEndpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+      const res = await fetch(uploadEndpoint, {
         method: 'POST',
         body: formData,
       });
@@ -76,7 +81,7 @@ export function CloudinaryUpload({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept={resourceType === 'video' ? 'video/*' : 'image/*'}
         className="hidden"
       />
       <div className="flex items-center gap-3">
@@ -92,7 +97,7 @@ export function CloudinaryUpload({
         
         {loading && (
           <span className="text-[11px] text-gray-500 italic animate-pulse">
-            Processing and storing image...
+            Processing and storing file...
           </span>
         )}
 
@@ -111,12 +116,24 @@ export function CloudinaryUpload({
       )}
 
       {currentValue && currentValue.startsWith('http') && (
-        <div className="relative w-16 h-20 border border-[#58111A]/15 overflow-hidden bg-white mt-1">
-          <img
-            src={currentValue}
-            alt="Preview"
-            className="w-full h-full object-cover"
-          />
+        <div className="mt-1">
+          {resourceType === 'video' ? (
+            <div className="relative w-48 border border-[#58111A]/15 bg-black">
+              <video
+                src={currentValue}
+                controls
+                className="w-full max-h-36 object-contain"
+              />
+            </div>
+          ) : (
+            <div className="relative w-16 h-20 border border-[#58111A]/15 overflow-hidden bg-white">
+              <img
+                src={currentValue}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

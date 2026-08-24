@@ -931,6 +931,12 @@ export default function AdminPage() {
                   className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
                   required
                 />
+                <CloudinaryUpload
+                  currentValue={newVideoUrl}
+                  onUploadSuccess={(url) => setNewVideoUrl(url)}
+                  resourceType="video"
+                  label="Upload Video from Device"
+                />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
