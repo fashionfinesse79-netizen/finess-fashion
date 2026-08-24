@@ -40,14 +40,19 @@ export default function Header() {
 
   return (
     <>
-
+      {/* Premium Announcement Bar */}
+      <div className="bg-[#58111A] text-[#FAF6F0] text-[9px] sm:text-[10px] tracking-[0.25em] font-medium py-2 px-4 uppercase text-center border-b border-[#D4AF37]/30 flex items-center justify-center gap-1.5 shadow-sm">
+        <Sparkles className="w-3 h-3 text-[#D4AF37] animate-pulse" />
+        <span>COMPLIMENTARY SHIPPING ACROSS INDIA & COMPLIMENTARY BOXPACKING</span>
+        <Sparkles className="w-3 h-3 text-[#D4AF37] animate-pulse" />
+      </div>
 
       {/* Main Sticky Header */}
       <header
-        className={`sticky top-0 z-40 transition-all duration-300 ${
+        className={`sticky top-0 z-40 transition-all duration-500 ${
           isScrolled
-            ? 'glass-header border-b border-[#58111A]/15 py-3 shadow-md'
-            : 'bg-white py-5 border-b border-[#58111A]/10'
+            ? 'glass-header border-b border-[#D4AF37]/20 py-2.5 shadow-[0_4px_30px_rgba(88,17,26,0.03)]'
+            : 'bg-white py-4 border-b border-[#58111A]/5'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -71,25 +76,31 @@ export default function Header() {
           </div>
 
           {/* Desktop Left: Balanced Nav Links (NEW IN, COLLECTIONS, SHOP) */}
-          <nav className="hidden lg:flex items-center gap-8 w-1/3">
-            {mainNavLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`text-[11px] font-semibold tracking-[0.2em] uppercase transition-colors hover:text-[#D4AF37] ${
-                  pathname === link.href ? 'text-[#D4AF37]' : 'text-[#58111A]'
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+          <nav className="hidden lg:flex items-center gap-10 w-1/3">
+            {mainNavLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`relative text-[10px] sm:text-[11px] font-semibold tracking-[0.25em] uppercase py-1 group transition-colors duration-300 ${
+                    isActive ? 'text-[#D4AF37]' : 'text-[#58111A] hover:text-[#D4AF37]'
+                  }`}
+                >
+                  {link.name}
+                  <span className={`absolute bottom-0 left-0 h-[1.5px] bg-[#D4AF37] transition-all duration-300 ${
+                    isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                  }`} />
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Centered Brand Logo: FINESSE FASHION BY DHANI Image Logo */}
+          {/* Centered Brand Logo: FINESSE FASHION BY DHANI Medallion Seal */}
           <div className="text-center flex-1 flex flex-col items-center justify-center">
-            <Link href="/" className="inline-block group">
-              <div className={`relative transition-all duration-300 flex items-center justify-center ${
-                isScrolled ? 'w-20 h-20' : 'w-28 h-28'
+            <Link href="/" className="inline-block group relative z-10">
+              <div className={`relative transition-all duration-500 flex items-center justify-center rounded-full overflow-hidden border border-[#D4AF37]/20 shadow-md group-hover:border-[#D4AF37]/70 group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] filter group-hover:drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] ${
+                isScrolled ? 'w-16 h-16 sm:w-18 sm:h-18' : 'w-24 h-24 sm:w-28 sm:h-28'
               }`}>
                 <Image
                   src="/logo.jpg"
@@ -97,39 +108,39 @@ export default function Header() {
                   fill
                   sizes="(max-w-768px) 80px, 112px"
                   priority
-                  className="object-contain"
+                  className="object-cover transform transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </Link>
           </div>
 
           {/* Desktop & Mobile Right: Actions (Search, Account, Wishlist, Cart) */}
-          <div className="flex items-center justify-end gap-4 sm:gap-6 w-1/4 lg:w-1/3">
+          <div className="flex items-center justify-end gap-3 sm:gap-5 w-1/4 lg:w-1/3">
             
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className="hidden lg:block p-1.5 text-[#58111A] hover:text-[#D4AF37] transition-colors"
+              className="hidden lg:block p-2 text-[#58111A] hover:text-[#D4AF37] hover:scale-110 transition-all duration-300 cursor-pointer"
               title="Search store"
             >
-              <Search className="w-5 h-5 stroke-[1.5]" />
+              <Search className="w-[18px] h-[18px] stroke-[1.5]" />
             </button>
 
             <Link
               href="/account"
-              className="p-1.5 text-[#58111A] hover:text-[#D4AF37] transition-colors"
+              className="p-2 text-[#58111A] hover:text-[#D4AF37] hover:scale-110 transition-all duration-300 flex items-center justify-center"
               title="My Account"
             >
-              <User className="w-5 h-5 stroke-[1.5]" />
+              <User className="w-[18px] h-[18px] stroke-[1.5]" />
             </Link>
 
             <Link
               href="/wishlist"
-              className="relative p-1.5 text-[#58111A] hover:text-[#D4AF37] transition-colors"
+              className="relative p-2 text-[#58111A] hover:text-[#D4AF37] hover:scale-110 transition-all duration-300 flex items-center justify-center"
               title="Wishlist"
             >
-              <Heart className="w-5 h-5 stroke-[1.5]" />
+              <Heart className="w-[18px] h-[18px] stroke-[1.5]" />
               {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#58111A] text-[#FAF6F0] text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-[#58111A] text-[#FAF6F0] text-[8px] font-bold rounded-full flex items-center justify-center border border-white">
                   {wishlist.length}
                 </span>
               )}
@@ -137,12 +148,12 @@ export default function Header() {
 
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-1.5 text-[#58111A] hover:text-[#D4AF37] transition-colors"
+              className="relative p-2 text-[#58111A] hover:text-[#D4AF37] hover:scale-110 transition-all duration-300 flex items-center justify-center cursor-pointer"
               title="Shopping Bag"
             >
-              <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
+              <ShoppingBag className="w-[18px] h-[18px] stroke-[1.5]" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-[#D4AF37] text-[#58111A] text-[9px] font-extrabold rounded-full flex items-center justify-center shadow-sm">
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#D4AF37] text-[#58111A] text-[8px] font-black rounded-full flex items-center justify-center border border-white shadow-sm animate-pulse">
                   {totalCartCount}
                 </span>
               )}
@@ -150,6 +161,7 @@ export default function Header() {
           </div>
 
         </div>
+
 
         {/* Global Expandable Search Bar */}
         {searchOpen && (
