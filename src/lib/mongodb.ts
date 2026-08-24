@@ -84,9 +84,9 @@ function writeDb(data: any) {
 }
 
 class MockCollection {
-  name: 'users' | 'orders';
+  name: string;
 
-  constructor(name: 'users' | 'orders') {
+  constructor(name: string) {
     this.name = name;
   }
 
@@ -227,3 +227,68 @@ export async function getOrderCollection() {
     return new MockCollection('orders') as any;
   }
 }
+
+export async function getProductCollection() {
+  if (useMock) {
+    return new MockCollection('products') as any;
+  }
+  try {
+    const client = await getMongoClient();
+    if (useMock || !client) {
+      return new MockCollection('products') as any;
+    }
+    return client.db().collection('products');
+  } catch (err) {
+    useMock = true;
+    return new MockCollection('products') as any;
+  }
+}
+
+export async function getPosterCollection() {
+  if (useMock) {
+    return new MockCollection('posters') as any;
+  }
+  try {
+    const client = await getMongoClient();
+    if (useMock || !client) {
+      return new MockCollection('posters') as any;
+    }
+    return client.db().collection('posters');
+  } catch (err) {
+    useMock = true;
+    return new MockCollection('posters') as any;
+  }
+}
+
+export async function getVideoCollection() {
+  if (useMock) {
+    return new MockCollection('videos') as any;
+  }
+  try {
+    const client = await getMongoClient();
+    if (useMock || !client) {
+      return new MockCollection('videos') as any;
+    }
+    return client.db().collection('videos');
+  } catch (err) {
+    useMock = true;
+    return new MockCollection('videos') as any;
+  }
+}
+
+export async function getCouponCollection() {
+  if (useMock) {
+    return new MockCollection('coupons') as any;
+  }
+  try {
+    const client = await getMongoClient();
+    if (useMock || !client) {
+      return new MockCollection('coupons') as any;
+    }
+    return client.db().collection('coupons');
+  } catch (err) {
+    useMock = true;
+    return new MockCollection('coupons') as any;
+  }
+}
+

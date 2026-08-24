@@ -67,9 +67,24 @@ export default function VideoCarousel() {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   useEffect(() => {
-    const stored = getStoredVideos();
-    setVideos(stored.sort((a, b) => a.order - b.order));
+    async function loadVideos() {
+      try {
+        const res = await fetch('/api/videos');
+        if (res.ok) {
+          const data = await res.json();
+          setVideos(data.sort((a: any, b: any) => a.order - b.order));
+        } else {
+          const stored = getStoredVideos();
+          setVideos(stored.sort((a, b) => a.order - b.order));
+        }
+      } catch (err) {
+        const stored = getStoredVideos();
+        setVideos(stored.sort((a, b) => a.order - b.order));
+      }
+    }
+    loadVideos();
   }, []);
+
 
   const updateScrollState = () => {
     if (!scrollRef.current) return;

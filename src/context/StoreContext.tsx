@@ -48,12 +48,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [couponsList, setCouponsList] = useState<Coupon[]>([]);
 
   const freeShippingThreshold = 5000;
 
-  // Load from local storage on mount
+  // Load from database/cache on mount
   useEffect(() => {
+    // 1. Initial synchronous cache render
     setProducts(getStoredProducts());
+
+    // 2. Async database load
+    async function loadDbData() {
+      try {
+        const [prodRes, coupRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/coupons')
+        ]);
+        if (prodRes.ok) {
+          const prodData = await prodRes.json();
+          setProducts(prodData);
+        }
+        if (coupRes.ok) {
+          const coupData = await coupRes.json();
+          setCouponsList(coupData);
+        }
+      } catch (err) {
+        console.error('Failed to load database data in StoreContext:', err);
+      }
+    }
+    loadDbData();
 
     try {
       const savedCart = localStorage.getItem('finess_cart');
@@ -156,8 +179,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const applyCoupon = (code: string): boolean => {
     setCouponError(null);
     const cleanCode = code.trim().toUpperCase();
-    const coupons = getStoredCoupons();
+    const coupons = couponsList.length > 0 ? couponsList : getStoredCoupons();
     const found = coupons.find((c) => c.code === cleanCode && c.isActive);
+
 
     if (!found) {
       setCouponError('Invalid or expired coupon code.');

@@ -22,7 +22,18 @@ export function getStoredProducts(): Product[] {
 export function saveProducts(products: Product[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+
+  const token = localStorage.getItem('authToken');
+  fetch('/api/products', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(products)
+  }).catch((e) => console.error('Failed to sync products to MongoDB:', e));
 }
+
 
 export function getStoredCoupons(): Coupon[] {
   if (typeof window === 'undefined') return INITIAL_COUPONS;
@@ -41,7 +52,18 @@ export function getStoredCoupons(): Coupon[] {
 export function saveCoupons(coupons: Coupon[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(COUPONS_KEY, JSON.stringify(coupons));
+
+  const token = localStorage.getItem('authToken');
+  fetch('/api/coupons', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(coupons)
+  }).catch((e) => console.error('Failed to sync coupons to MongoDB:', e));
 }
+
 
 export function getStoredOrders(): Order[] {
   if (typeof window === 'undefined') return INITIAL_ORDERS;
@@ -87,7 +109,18 @@ export function getStoredPosters(): Poster[] {
 export function savePosters(posters: Poster[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem('finess_posters_v1', JSON.stringify(posters));
+
+  const token = localStorage.getItem('authToken');
+  fetch('/api/posters', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(posters)
+  }).catch((e) => console.error('Failed to sync posters to MongoDB:', e));
 }
+
 
 export function getStoredVideos(): VideoProduct[] {
   if (typeof window === 'undefined') return [];
@@ -106,4 +139,15 @@ export function getStoredVideos(): VideoProduct[] {
 export function saveVideos(videos: VideoProduct[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem('finess_videos_v1', JSON.stringify(videos));
+
+  const token = localStorage.getItem('authToken');
+  fetch('/api/videos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(videos)
+  }).catch((e) => console.error('Failed to sync videos to MongoDB:', e));
 }
+

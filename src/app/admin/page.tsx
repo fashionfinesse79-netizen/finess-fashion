@@ -24,6 +24,27 @@ export default function AdminPage() {
     }
   }, [user, isLoading, router]);
 
+  useEffect(() => {
+    if (isLoading || !user || !user.isAdmin) return;
+
+    async function loadDbData() {
+      try {
+        const [coupRes, postRes, vidRes] = await Promise.all([
+          fetch('/api/coupons'),
+          fetch('/api/posters'),
+          fetch('/api/videos')
+        ]);
+        if (coupRes.ok) setCouponsList(await coupRes.json());
+        if (postRes.ok) setPostersList(await postRes.json());
+        if (vidRes.ok) setVideosList(await vidRes.json());
+      } catch (err) {
+        console.error('Failed to sync admin lists with MongoDB:', err);
+      }
+    }
+    loadDbData();
+  }, [user, isLoading]);
+
+
   if (isLoading || !user || !user.isAdmin) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">

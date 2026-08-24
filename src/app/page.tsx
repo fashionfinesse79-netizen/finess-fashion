@@ -16,8 +16,22 @@ export default function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
-    setPosters(getStoredPosters());
+    async function loadPosters() {
+      try {
+        const res = await fetch('/api/posters');
+        if (res.ok) {
+          const data = await res.json();
+          setPosters(data);
+        } else {
+          setPosters(getStoredPosters());
+        }
+      } catch (err) {
+        setPosters(getStoredPosters());
+      }
+    }
+    loadPosters();
   }, []);
+
 
   // Auto-play interval
   useEffect(() => {
