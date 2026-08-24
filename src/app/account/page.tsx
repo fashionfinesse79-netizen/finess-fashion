@@ -23,6 +23,38 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState<boolean>(false);
 
+  // Forgot password flow states
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setError(null);
+    setForgotLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+
+      if (res.ok) {
+        setForgotSuccess(true);
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to request password reset.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const handleTabToggle = (loginTab: boolean) => {
     setIsLoginTab(loginTab);
     setError(null);
@@ -102,6 +134,87 @@ export default function AccountPage() {
   const savedWishlistProducts = products.filter((p) => wishlist.includes(p.id));
 
   if (!user) {
+    if (showForgotPassword) {
+      return (
+        <div className="max-w-md mx-auto px-4 py-16">
+          <div className="bg-[#FAF6F0] p-8 border border-[#58111A]/15 shadow-sm space-y-6">
+            <div className="text-center">
+              <span className="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-semibold">
+                ATELIER MEMBER PORTAL
+              </span>
+              <h1 className="font-serif-luxury text-3xl text-[#58111A] mt-1">
+                RESET PASSWORD
+              </h1>
+              <p className="text-xs text-[#7A3B43] mt-2 font-light">
+                Enter your email address and we will send you a secure link to reset your password.
+              </p>
+            </div>
+
+            {forgotSuccess ? (
+              <div className="space-y-4">
+                <div className="bg-[#58111A]/5 text-[#58111A] text-xs border border-[#58111A]/15 p-4 uppercase tracking-wider font-semibold leading-relaxed">
+                  If an account is associated with that email, a password reset link has been dispatched. 
+                  <span className="block mt-2 text-[10px] text-gray-400 normal-case font-normal italic">
+                    (In development mode, you can find the link logged in the server console)
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setForgotSuccess(false);
+                    setForgotEmail('');
+                  }}
+                  className="w-full py-3.5 bg-[#58111A] text-[#FAF6F0] text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors"
+                >
+                  RETURN TO SIGN IN
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                {error && (
+                  <div className="bg-red-50 text-red-700 text-xs border border-red-200 p-3 font-semibold uppercase tracking-wider">
+                    {error}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-[#7A3B43] font-semibold mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="ananya@finesse.fashion"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white border border-[#58111A]/15 text-xs text-[#58111A] focus:outline-none focus:border-[#D4AF37]"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full py-3.5 bg-[#58111A] text-[#FAF6F0] text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors disabled:opacity-50"
+                >
+                  {forgotLoading ? 'SENDING REQUEST...' : 'SEND RESET LINK'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setError(null);
+                  }}
+                  className="w-full text-center text-xs uppercase tracking-wider font-semibold text-[#7A3B43] hover:text-[#D4AF37] transition-colors"
+                >
+                  CANCEL
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto px-4 py-16">
         <div className="bg-[#FAF6F0] p-8 border border-[#58111A]/15 shadow-sm space-y-6">
@@ -181,6 +294,20 @@ export default function AccountPage() {
                 className="w-full px-3 py-2.5 bg-white border border-[#58111A]/15 text-xs text-[#58111A] focus:outline-none focus:border-[#D4AF37]"
                 required
               />
+              {isLoginTab && (
+                <div className="text-right mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setError(null);
+                    }}
+                    className="text-[10px] uppercase tracking-wider font-semibold text-[#7A3B43] hover:text-[#D4AF37] transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
 
             <button

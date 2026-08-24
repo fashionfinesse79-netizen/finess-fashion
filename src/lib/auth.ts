@@ -3,6 +3,7 @@ import { getUserCollection } from '@/lib/mongodb';
 import { hash, compare } from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
+import { sendResetEmail } from '@/lib/email';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-secret';
 
@@ -68,8 +69,13 @@ export async function generateResetToken(email: string) {
   const resetToken = uuidv4();
   const expiry = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
   await users.updateOne({ email }, { $set: { resetToken, resetTokenExpiry: expiry } });
-  // Placeholder email sending – log to console
-  console.log('Password reset link:', `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password/${resetToken}`);
+
+  const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password/${resetToken}`;
+  try {
+    await sendResetEmail(email, resetUrl);
+  } catch (error) {
+    console.error('Failed to send reset email:', error);
+  }
   return { success: true };
 }
 
