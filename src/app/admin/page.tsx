@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
-import { Product, Order, Coupon, Category, OrderStatus, Size, Poster, VideoProduct, ReturnStatus } from '@/lib/types';
-import { formatINR, saveProducts, getStoredProducts, saveOrders, getStoredOrders, saveCoupons, getStoredCoupons, getStoredPosters, savePosters, getStoredVideos, saveVideos } from '@/lib/store';
+import { Product, Order, Coupon, Category, OrderStatus, Size, Poster, VideoProduct, ReturnStatus, InstagramPost } from '@/lib/types';
+import { formatINR, saveProducts, getStoredProducts, saveOrders, getStoredOrders, saveCoupons, getStoredCoupons, getStoredPosters, savePosters, getStoredVideos, saveVideos, getStoredInstagram, saveInstagram } from '@/lib/store';
 import { Film, ArrowUp, ArrowDown } from 'lucide-react';
-import { Package, ShoppingBag, Users, Tag, Plus, Edit, Trash2, CheckCircle2, ShieldAlert, Sparkles, RefreshCw, X } from 'lucide-react';
+import { Package, ShoppingBag, Users, Tag, Plus, Edit, Trash2, CheckCircle2, ShieldAlert, Sparkles, RefreshCw, X, Camera } from 'lucide-react';
 import { CloudinaryUpload } from '@/components/admin/CloudinaryUpload';
 
 export default function AdminPage() {
@@ -30,7 +30,7 @@ export default function AdminPage() {
     async function loadDbData() {
       try {
         const token = localStorage.getItem('authToken');
-        const [coupRes, postRes, vidRes, ordRes] = await Promise.all([
+        const [coupRes, postRes, vidRes, ordRes, instaRes] = await Promise.all([
           fetch('/api/coupons'),
           fetch('/api/posters'),
           fetch('/api/videos'),
@@ -38,7 +38,8 @@ export default function AdminPage() {
             headers: {
               'Authorization': `Bearer ${token}`
             }
-          })
+          }),
+          fetch('/api/instagram')
         ]);
         if (coupRes.ok) setCouponsList(await coupRes.json());
         if (postRes.ok) setPostersList(await postRes.json());
@@ -47,6 +48,7 @@ export default function AdminPage() {
           const ordData = await ordRes.json();
           setOrdersList(ordData.orders || []);
         }
+        if (instaRes.ok) setInstagramList(await instaRes.json());
       } catch (err) {
         console.error('Failed to sync admin lists with MongoDB:', err);
       }
@@ -67,7 +69,7 @@ export default function AdminPage() {
     );
   }
 
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'customers' | 'coupons' | 'posters' | 'videos'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'customers' | 'coupons' | 'posters' | 'videos' | 'instagram'>('products');
 
   // Products state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -100,6 +102,13 @@ export default function AdminPage() {
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newVideoOriginalPrice, setNewVideoOriginalPrice] = useState(5000);
   const [newVideoSalePrice, setNewVideoSalePrice] = useState(3500);
+
+  // Instagram state
+  const [instagramList, setInstagramList] = useState<InstagramPost[]>(getStoredInstagram());
+  const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
+  const [editingInstagram, setEditingInstagram] = useState<InstagramPost | null>(null);
+  const [newInstagramImageUrl, setNewInstagramImageUrl] = useState('');
+  const [newInstagramPostUrl, setNewInstagramPostUrl] = useState('');
 
   // Orders state
   const [ordersList, setOrdersList] = useState<Order[]>(getStoredOrders());
@@ -385,6 +394,52 @@ export default function AdminPage() {
     saveVideos(sorted);
   };
 
+  // Save new/edited Instagram post
+  const handleSaveInstagram = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInstagramImageUrl) return;
+
+    let updated: InstagramPost[];
+    if (editingInstagram) {
+      updated = instagramList.map((item) =>
+        item.id === editingInstagram.id
+          ? {
+              ...item,
+              imageUrl: newInstagramImageUrl,
+              postUrl: newInstagramPostUrl
+            }
+          : item
+      );
+      showToast('Instagram post updated');
+    } else {
+      const newPost: InstagramPost = {
+        id: `insta-${Date.now()}`,
+        imageUrl: newInstagramImageUrl,
+        postUrl: newInstagramPostUrl,
+        createdAt: new Date().toISOString()
+      };
+      updated = [newPost, ...instagramList];
+      showToast('Instagram post added');
+    }
+
+    setInstagramList(updated);
+    saveInstagram(updated);
+    setIsInstagramModalOpen(false);
+    setNewInstagramImageUrl('');
+    setNewInstagramPostUrl('');
+    setEditingInstagram(null);
+  };
+
+  // Delete Instagram post
+  const handleDeleteInstagram = (id: string) => {
+    if (!confirm('Are you sure you want to delete this Instagram post?')) return;
+    const updated = instagramList.filter((item) => item.id !== id);
+    setInstagramList(updated);
+    saveInstagram(updated);
+    showToast('Instagram post deleted');
+  };
+
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       
@@ -467,6 +522,15 @@ export default function AdminPage() {
           }`}
         >
           <Film className="w-4 h-4" /> Videos ({videosList.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('instagram')}
+          className={`flex items-center gap-2 px-6 py-4 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${
+            activeTab === 'instagram' ? 'border-[#58111A] text-[#58111A] bg-[#FAF6F0]' : 'border-transparent text-gray-400 hover:text-[#58111A]'
+          }`}
+        >
+          <Camera className="w-4 h-4" /> Instagram ({instagramList.length})
         </button>
       </div>
 
@@ -939,6 +1003,80 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* TAB 7: INSTAGRAM FEED MANAGER */}
+      {activeTab === 'instagram' && (
+        <div className="bg-white border border-[#58111A]/15 overflow-x-auto shadow-sm">
+          <div className="flex justify-between items-center p-4">
+            <h3 className="font-serif-luxury text-xl text-[#58111A]">Instagram Editorial Gallery</h3>
+            <button
+              onClick={() => {
+                setEditingInstagram(null);
+                setNewInstagramImageUrl('');
+                setNewInstagramPostUrl('');
+                setIsInstagramModalOpen(true);
+              }}
+              className="px-5 py-2 bg-[#D4AF37] text-[#58111A] text-xs uppercase tracking-widest font-semibold hover:bg-white transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> ADD NEW PHOTO
+            </button>
+          </div>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-[#58111A] text-[#FAF6F0] uppercase tracking-wider font-semibold">
+                <th className="py-3 px-4">Photo</th>
+                <th className="py-3 px-4">Instagram Post URL</th>
+                <th className="py-3 px-4">Image Source URL</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#58111A]/15">
+              {instagramList.map((post, idx) => (
+                <tr key={post.id || idx} className="hover:bg-[#FAF6F0]">
+                  <td className="py-3 px-4">
+                    <img src={post.imageUrl} alt="Instagram Editorial" className="w-16 h-16 object-cover border border-[#58111A]/15 rounded" />
+                  </td>
+                  <td className="py-3 px-4 truncate max-w-[250px] text-[#58111A] font-medium">
+                    <a href={post.postUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#D4AF37]">
+                      {post.postUrl || 'No link set'}
+                    </a>
+                  </td>
+                  <td className="py-3 px-4 max-w-[200px] truncate text-gray-500">{post.imageUrl}</td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingInstagram(post);
+                          setNewInstagramImageUrl(post.imageUrl);
+                          setNewInstagramPostUrl(post.postUrl);
+                          setIsInstagramModalOpen(true);
+                        }}
+                        className="p-1.5 bg-gray-100 text-gray-700 hover:bg-[#58111A] hover:text-white transition-colors"
+                        title="Edit Instagram Post"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteInstagram(post.id)}
+                        className="p-1.5 bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white transition-colors"
+                        title="Delete Instagram Post"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {instagramList.length === 0 && (
+            <div className="p-10 text-center text-gray-400 text-xs">
+              No photos added yet. Click &quot;Add New Photo&quot; to build your feed lookbook.
+            </div>
+          )}
+        </div>
+      )}
+
+
       {/* Product Add / Edit Modal */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -1186,6 +1324,52 @@ export default function AdminPage() {
               </div>
               <button type="submit" className="w-full py-3 bg-[#58111A] text-[#FAF6F0] uppercase tracking-wider font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors">
                 {editingVideo ? 'Update Video' : 'Add Video to Lookbook'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Instagram Add / Edit Modal */}
+      {isInstagramModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg bg-[#FAF6F0] border border-[#58111A]/15 p-6 shadow-2xl space-y-4">
+            <button onClick={() => setIsInstagramModalOpen(false)} className="absolute top-4 right-4 text-gray-500">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="font-serif-luxury text-2xl text-[#58111A]">
+              {editingInstagram ? 'Edit Instagram Editorial' : 'Add Instagram Editorial'}
+            </h3>
+            <form onSubmit={handleSaveInstagram} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Instagram Post URL</label>
+                <input
+                  type="text"
+                  placeholder="https://instagram.com/p/..."
+                  value={newInstagramPostUrl}
+                  onChange={e => setNewInstagramPostUrl(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Editorial Photo Image</label>
+                <input
+                  type="text"
+                  placeholder="https://images.unsplash.com/... or upload below"
+                  value={newInstagramImageUrl}
+                  onChange={e => setNewInstagramImageUrl(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                  required
+                />
+                <CloudinaryUpload
+                  currentValue={newInstagramImageUrl}
+                  onUploadSuccess={(url) => setNewInstagramImageUrl(url)}
+                  label="Upload Photo from Device Gallery"
+                />
+              </div>
+              <button type="submit" className="w-full py-3 bg-[#58111A] text-[#FAF6F0] uppercase tracking-wider font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors">
+                {editingInstagram ? 'Update Instagram Post' : 'Add Instagram Post'}
               </button>
             </form>
           </div>

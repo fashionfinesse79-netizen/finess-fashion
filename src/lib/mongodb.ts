@@ -292,3 +292,20 @@ export async function getCouponCollection() {
   }
 }
 
+export async function getInstagramCollection() {
+  if (useMock) {
+    return new MockCollection('instagram') as any;
+  }
+  try {
+    const client = await getMongoClient();
+    if (useMock || !client) {
+      return new MockCollection('instagram') as any;
+    }
+    return client.db().collection('instagram');
+  } catch (err) {
+    useMock = true;
+    return new MockCollection('instagram') as any;
+  }
+}
+
+

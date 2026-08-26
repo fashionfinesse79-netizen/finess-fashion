@@ -188,3 +188,11 @@ export interface VideoProduct {
   salePrice: number;
   order: number;
 }
+
+export interface InstagramPost {
+  id: string;
+  imageUrl: string;
+  postUrl: string;
+  createdAt: string;
+}
+

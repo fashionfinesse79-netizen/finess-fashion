@@ -1,4 +1,4 @@
-import { Product, Coupon, Order, User, Poster, VideoProduct } from './types';
+import { Product, Coupon, Order, User, Poster, VideoProduct, InstagramPost } from './types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS, INITIAL_POSTERS } from './initialData';
 
 const PRODUCTS_KEY = 'finess_products_v1';
@@ -150,4 +150,34 @@ export function saveVideos(videos: VideoProduct[]) {
     body: JSON.stringify(videos)
   }).catch((e) => console.error('Failed to sync videos to MongoDB:', e));
 }
+
+export function getStoredInstagram(): InstagramPost[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem('finess_instagram_v1');
+    if (!data) {
+      localStorage.setItem('finess_instagram_v1', JSON.stringify([]));
+      return [];
+    }
+    return JSON.parse(data);
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveInstagram(posts: InstagramPost[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('finess_instagram_v1', JSON.stringify(posts));
+
+  const token = localStorage.getItem('authToken');
+  fetch('/api/instagram', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(posts)
+  }).catch((e) => console.error('Failed to sync instagram feed to MongoDB:', e));
+}
+
 
