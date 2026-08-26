@@ -357,7 +357,7 @@ export default function HomePage() {
             </h2>
           </div>
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/finesse__fashion__?igsi=MWEzdnBuMmhiOXVzag=="
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#58111A] hover:text-[#D4AF37] mt-2 sm:mt-0 font-bold"
@@ -373,7 +373,7 @@ export default function HomePage() {
           {instagramFeed.map((post, idx) => (
             <a
               key={post.id || idx}
-              href={post.postUrl || 'https://instagram.com/finessefashion.co'}
+              href={post.postUrl || 'https://www.instagram.com/finesse__fashion__?igsi=MWEzdnBuMmhiOXVzag=='}
               target="_blank"
               rel="noopener noreferrer"
               className="relative aspect-square overflow-hidden group border border-[#58111A]/20 block"
