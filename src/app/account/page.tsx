@@ -72,9 +72,31 @@ export default function AccountPage() {
       return;
     }
     setLoadingOrders(true);
-    try {
-      // Orders are stored in localStorage (same source admin uses)
-      // Filter by the current user's email
+
+    async function fetchMyOrders() {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await fetch('/api/orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data.orders || []);
+        } else {
+          loadLocalOrders();
+        }
+      } catch (err) {
+        console.error('Failed to load orders from database:', err);
+        loadLocalOrders();
+      } finally {
+        setLoadingOrders(false);
+      }
+    }
+
+    function loadLocalOrders() {
+      if (!user) return;
       const allOrders = getStoredOrders();
       const userEmail = user.email?.toLowerCase();
       const myOrders = allOrders.filter((o: any) => {
@@ -82,12 +104,12 @@ export default function AccountPage() {
         return orderEmail === userEmail;
       });
       setOrders(myOrders);
-    } catch (err) {
-      console.error('Failed to load orders:', err);
-    } finally {
-      setLoadingOrders(false);
     }
+
+
+    fetchMyOrders();
   }, [user]);
+
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
