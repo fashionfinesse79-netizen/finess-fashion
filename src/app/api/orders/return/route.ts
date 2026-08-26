@@ -5,10 +5,6 @@ import { requireAuth } from '@/lib/authMiddleware';
 // POST: Customer requests a return
 export async function POST(request: Request) {
   try {
-    const authError = await requireAuth(request);
-    if (authError) return authError;
-
-    const { userId } = (request as any).auth;
     const { orderId, reason } = await request.json();
 
     if (!orderId || !reason) {
@@ -20,11 +16,6 @@ export async function POST(request: Request) {
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    // Verify ownership
-    if (order.userId !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify order is delivered
