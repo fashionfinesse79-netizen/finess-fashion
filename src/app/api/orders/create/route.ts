@@ -20,8 +20,9 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fallback to guest if not authenticated
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      userId = 'guest';
     }
 
     const orderData = await request.json();

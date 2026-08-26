@@ -94,20 +94,19 @@ export default function CheckoutPage() {
     const existingOrders = getStoredOrders();
     saveOrders([newOrder, ...existingOrders]);
 
-    // Persist order to MongoDB Atlas if logged in
+    // Persist order to MongoDB Atlas
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken');
-      if (token) {
-        fetch('/api/orders/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(newOrder)
-        }).catch((err) => console.error('Error syncing order to Atlas:', err));
-      }
+      fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(newOrder)
+      }).catch((err) => console.error('Error syncing order to Atlas:', err));
     }
+
 
     clearCart();
     setIsRazorpayOpen(false);
