@@ -63,23 +63,28 @@ function OrderTrackingContent() {
 
   useEffect(() => {
     async function initTrack() {
-      if (!defaultId) {
+      let targetId = defaultId;
+
+      if (!targetId) {
         const localOrders = getStoredOrders();
         if (localOrders.length > 0) {
-          setActiveOrder(localOrders[0]);
+          targetId = localOrders[0].id;
+          setActiveOrder(localOrders[0]); // Instant cache display
+        } else {
+          return;
         }
-        return;
       }
+
       setLoading(true);
       try {
-        const res = await fetch(`/api/orders/track?id=${encodeURIComponent(defaultId)}`);
+        const res = await fetch(`/api/orders/track?id=${encodeURIComponent(targetId)}`);
         if (res.ok) {
           const data = await res.json();
           setActiveOrder(data.order);
         } else {
           // fallback to localStorage
           const localOrders = getStoredOrders();
-          const found = localOrders.find((o) => o.id.toLowerCase() === defaultId.toLowerCase() || o.trackingNumber.toLowerCase() === defaultId.toLowerCase());
+          const found = localOrders.find((o) => o.id.toLowerCase() === targetId.toLowerCase() || o.trackingNumber.toLowerCase() === targetId.toLowerCase());
           if (found) setActiveOrder(found);
         }
       } catch (err) {
@@ -91,6 +96,7 @@ function OrderTrackingContent() {
     }
     initTrack();
   }, [defaultId]);
+
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,8 +190,13 @@ function OrderTrackingContent() {
                 ORDER #{activeOrder.id}
               </span>
               <h2 className="font-serif-luxury text-2xl text-[#58111A] font-medium">
-                Shipment Status: <span className="text-[#D4AF37]">{activeOrder.orderStatus}</span>
+                Shipment Status: <span className="text-[#D4AF37]">{
+                  activeOrder.returnRequest 
+                    ? `Return ${activeOrder.returnRequest.status}` 
+                    : activeOrder.orderStatus
+                }</span>
               </h2>
+
               <p className="text-xs text-[#7A3B43] mt-1">
                 Air Courier: <strong>{activeOrder.courierName || 'BlueDart Express'}</strong> • Tracking / AWB: <strong>{activeOrder.awbNumber || activeOrder.trackingNumber}</strong>
               </p>
