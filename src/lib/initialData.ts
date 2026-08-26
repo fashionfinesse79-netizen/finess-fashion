@@ -400,10 +400,8 @@ export const INITIAL_ORDERS: Order[] = [
     orderStatus: 'Shipped',
     estimatedDelivery: '2026-08-08',
     historyTimeline: [
-      { status: 'Placed', timestamp: '2026-08-05 14:30', description: 'Order successfully authorized.' },
-      { status: 'Confirmed', timestamp: '2026-08-05 15:10', description: 'Payment verified via Razorpay UPI.' },
+      { status: 'Paid', timestamp: '2026-08-05 15:10', description: 'Payment verified via Razorpay UPI.' },
       { status: 'Processing', timestamp: '2026-08-06 09:00', description: 'Hand-inspected by Atelier Quality Team.' },
-      { status: 'Packed', timestamp: '2026-08-06 16:20', description: 'Sealed in FINESS luxury gift boxing.' },
       { status: 'Shipped', timestamp: '2026-08-07 08:30', description: 'Handed to BlueDart Express Air Courier.' }
     ]
   }

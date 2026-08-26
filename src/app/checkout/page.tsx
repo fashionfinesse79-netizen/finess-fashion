@@ -76,19 +76,16 @@ export default function CheckoutPage() {
       couponCode: appliedCoupon?.code,
       totalAmount: finalPayableTotal,
       paymentMethod: paymentMethodUsed as any,
-      paymentStatus: 'Paid',
-      orderStatus: 'Confirmed',
+      paymentStatus: paymentMethodUsed === 'COD' ? 'Pending' : 'Paid',
+      orderStatus: paymentMethodUsed === 'COD' ? 'Pending Payment' : 'Paid',
       estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       historyTimeline: [
         {
-          status: 'Placed',
+          status: paymentMethodUsed === 'COD' ? 'Pending Payment' : 'Paid',
           timestamp: new Date().toLocaleString(),
-          description: 'Order payment authorized via Razorpay.'
-        },
-        {
-          status: 'Confirmed',
-          timestamp: new Date().toLocaleString(),
-          description: 'Payment captured successfully. Dispatched to Atelier team.'
+          description: paymentMethodUsed === 'COD' 
+            ? 'Order placed. Payment pending Cash on Delivery.'
+            : 'Payment authorized and captured via Razorpay. Dispatched to Atelier.'
         }
       ]
     };

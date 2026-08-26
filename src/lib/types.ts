@@ -74,13 +74,28 @@ export interface OrderItem {
 }
 
 export type OrderStatus = 
-  | 'Placed'
-  | 'Confirmed'
+  | 'Pending Payment'
+  | 'Paid'
   | 'Processing'
-  | 'Packed'
   | 'Shipped'
-  | 'Out for Delivery'
-  | 'Delivered';
+  | 'Delivered'
+  | 'Cancelled';
+
+export type ReturnStatus =
+  | 'Requested'
+  | 'Approved'
+  | 'Rejected'
+  | 'Pickup Scheduled'
+  | 'Returned'
+  | 'Refund Processed';
+
+export interface ReturnRequest {
+  reason: string;
+  status: ReturnStatus;
+  requestedAt: string;
+  adminNotes?: string;
+  updatedAt?: string;
+}
 
 export interface ShippingAddress {
   fullName: string;
@@ -108,12 +123,16 @@ export interface Order {
   paymentStatus: 'Pending' | 'Paid' | 'Failed';
   orderStatus: OrderStatus;
   estimatedDelivery: string;
+  courierName?: string;
+  awbNumber?: string;
+  returnRequest?: ReturnRequest;
   historyTimeline: {
     status: OrderStatus;
     timestamp: string;
     description: string;
   }[];
 }
+
 
 export interface Coupon {
   id: string;

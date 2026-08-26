@@ -9,12 +9,21 @@ import { requireAuth } from '@/lib/authMiddleware';
 export async function GET(request: Request) {
   const authError = await requireAuth(request);
   if (authError) return authError;
-  const { userId } = (request as any).auth;
+  const { userId, email } = (request as any).auth;
 
   const ordersCol = await getOrderCollection();
+
+  // Admin bypass: let the store owner see all orders
+  const isAdminEmail = email === 'admin@finess.fashion' || email === 'admin@finesse.fashion';
+  if (isAdminEmail) {
+    const allOrders = await ordersCol.find({}).sort({ createdAt: -1 }).toArray();
+    return NextResponse.json({ orders: allOrders });
+  }
+
   const orders = await ordersCol.find({ userId }).toArray();
   return NextResponse.json({ orders });
 }
+
 
 /**
  * POST /api/orders

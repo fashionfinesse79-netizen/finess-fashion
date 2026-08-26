@@ -26,14 +26,31 @@ export default function OrderConfirmationPage() {
       });
     } catch (e) {}
 
-    const orders = getStoredOrders();
-    const found = orders.find((o) => o.id === orderId);
-    if (found) {
-      setOrder(found);
-    } else if (orders.length > 0) {
-      setOrder(orders[0]);
+    async function fetchOrder() {
+      try {
+        const res = await fetch(`/api/orders/track?id=${encodeURIComponent(orderId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.order) {
+            setOrder(data.order);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      const orders = getStoredOrders();
+      const found = orders.find((o) => o.id === orderId);
+      if (found) {
+        setOrder(found);
+      } else if (orders.length > 0) {
+        setOrder(orders[0]);
+      }
     }
+    fetchOrder();
   }, [orderId]);
+
 
   const handlePrint = () => {
     window.print();

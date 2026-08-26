@@ -15,6 +15,51 @@ function OrderTrackingContent() {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const [returnReason, setReturnReason] = useState("Size doesn't fit");
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+
+  const handleRequestReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeOrder) return;
+    setReturnSubmitting(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/orders/return', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderId: activeOrder.id, reason: returnReason })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setActiveOrder({
+          ...activeOrder,
+          returnRequest: data.returnRequest,
+          historyTimeline: [
+            ...activeOrder.historyTimeline,
+            {
+              status: activeOrder.orderStatus,
+              timestamp: new Date().toLocaleString(),
+              description: `Return requested. Reason: ${returnReason}`
+            }
+          ]
+        });
+        alert('Return request submitted successfully!');
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'Failed to submit return request');
+      }
+    } catch (err) {
+      console.error('Error submitting return request:', err);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
+
 
   useEffect(() => {
     async function initTrack() {
@@ -77,17 +122,16 @@ function OrderTrackingContent() {
   };
 
   const stepsList: OrderStatus[] = [
-    'Placed',
-    'Confirmed',
+    'Pending Payment',
+    'Paid',
     'Processing',
-    'Packed',
     'Shipped',
-    'Out for Delivery',
     'Delivered'
   ];
 
   const getStepIndex = (status: OrderStatus) => stepsList.indexOf(status);
   const currentStepIdx = activeOrder ? getStepIndex(activeOrder.orderStatus) : 0;
+
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
@@ -143,8 +187,9 @@ function OrderTrackingContent() {
                 Shipment Status: <span className="text-[#D4AF37]">{activeOrder.orderStatus}</span>
               </h2>
               <p className="text-xs text-[#7A3B43] mt-1">
-                Air Courier: <strong>BlueDart Express</strong> • Tracking ID: <strong>{activeOrder.trackingNumber}</strong>
+                Air Courier: <strong>{activeOrder.courierName || 'BlueDart Express'}</strong> • Tracking / AWB: <strong>{activeOrder.awbNumber || activeOrder.trackingNumber}</strong>
               </p>
+
             </div>
 
             <div className="bg-[#FAF6F0] p-3 border border-[#58111A]/15 text-xs text-right">
@@ -153,60 +198,70 @@ function OrderTrackingContent() {
             </div>
           </div>
 
-          {/* Visual Step-by-Step Progress Bar */}
-          <div>
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-[#58111A] mb-6">
-              Live Progress Timeline
-            </h3>
-
-            {/* Desktop Horizontal Stepper */}
-            <div className="hidden md:block relative mb-8">
-              <div className="absolute top-4 left-6 right-6 h-0.5 bg-[#58111A]/15 -z-0" />
-              <div
-                className="absolute top-4 left-6 h-0.5 bg-[#58111A] transition-all duration-700 -z-0"
-                style={{ width: `${(currentStepIdx / (stepsList.length - 1)) * 90}%` }}
-              />
-
-              <div className="grid grid-cols-7 text-center relative z-10">
-                {stepsList.map((step, idx) => {
-                  const isCompleted = idx <= currentStepIdx;
-                  const isCurrent = idx === currentStepIdx;
-
-                  return (
-                    <div key={step} className="flex flex-col items-center gap-2">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                          isCompleted
-                            ? 'bg-[#58111A] text-[#FAF6F0] shadow-md'
-                            : 'bg-white border-2 border-[#58111A]/15 text-[#A3757C]'
-                        } ${isCurrent ? 'ring-4 ring-[#D4AF37]/30 scale-110' : ''}`}
-                      >
-                        {isCompleted ? <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" /> : idx + 1}
-                      </div>
-                      <span className={`text-[10px] uppercase font-medium ${isCompleted ? 'text-[#58111A]' : 'text-[#A3757C]'}`}>
-                        {step}
-                      </span>
-                    </div>
-                  );
-                })}
+            {/* Cancelled Banner */}
+            {activeOrder.orderStatus === 'Cancelled' && (
+              <div className="bg-red-50 border border-red-200 p-4 text-center rounded my-4">
+                <p className="text-xs text-red-700 uppercase tracking-wider font-semibold">This order has been Cancelled.</p>
               </div>
-            </div>
+            )}
 
-            {/* Mobile Vertical Stepper */}
-            <div className="md:hidden space-y-4 border-l-2 border-[#58111A] pl-4">
-              {stepsList.map((step, idx) => {
-                const isCompleted = idx <= currentStepIdx;
-                return (
-                  <div key={step} className="flex items-center gap-3 text-xs">
-                    <span className={`w-3 h-3 rounded-full ${isCompleted ? 'bg-[#58111A]' : 'bg-gray-300'}`} />
-                    <span className={isCompleted ? 'font-semibold text-[#58111A]' : 'text-[#A3757C]'}>
-                      {step}
-                    </span>
+            {/* Visual Step-by-Step Progress Bar */}
+            {activeOrder.orderStatus !== 'Cancelled' && (
+              <div>
+                <h3 className="text-xs uppercase font-semibold tracking-wider text-[#58111A] mb-6">
+                  Live Progress Timeline
+                </h3>
+
+                {/* Desktop Horizontal Stepper */}
+                <div className="hidden md:block relative mb-8">
+                  <div className="absolute top-4 left-6 right-6 h-0.5 bg-[#58111A]/15 -z-0" />
+                  <div
+                    className="absolute top-4 left-6 h-0.5 bg-[#58111A] transition-all duration-700 -z-0"
+                    style={{ width: `${(currentStepIdx / (stepsList.length - 1)) * 90}%` }}
+                  />
+
+                  <div className="grid grid-cols-5 text-center relative z-10">
+                    {stepsList.map((step, idx) => {
+                      const isCompleted = idx <= currentStepIdx;
+                      const isCurrent = idx === currentStepIdx;
+
+                      return (
+                        <div key={step} className="flex flex-col items-center gap-2">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                              isCompleted
+                                ? 'bg-[#58111A] text-[#FAF6F0] shadow-md'
+                                : 'bg-white border-2 border-[#58111A]/15 text-[#A3757C]'
+                            } ${isCurrent ? 'ring-4 ring-[#D4AF37]/30 scale-110' : ''}`}
+                          >
+                            {isCompleted ? <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" /> : idx + 1}
+                          </div>
+                          <span className={`text-[10px] uppercase font-medium ${isCompleted ? 'text-[#58111A]' : 'text-[#A3757C]'}`}>
+                            {step}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+
+                {/* Mobile Vertical Stepper */}
+                <div className="md:hidden space-y-4 border-l-2 border-[#58111A] pl-4">
+                  {stepsList.map((step, idx) => {
+                    const isCompleted = idx <= currentStepIdx;
+                    return (
+                      <div key={step} className="flex items-center gap-3 text-xs">
+                        <span className={`w-3 h-3 rounded-full ${isCompleted ? 'bg-[#58111A]' : 'bg-gray-300'}`} />
+                        <span className={isCompleted ? 'font-semibold text-[#58111A]' : 'text-[#A3757C]'}>
+                          {step}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
 
           {/* Activity Log Feed */}
           <div className="border-t border-[#58111A]/15 pt-6">
@@ -252,6 +307,93 @@ function OrderTrackingContent() {
               ))}
             </div>
           </div>
+
+          {/* Returns Management Section */}
+          {activeOrder.orderStatus === 'Delivered' && (
+            <div className="border-t border-[#58111A]/15 pt-6 space-y-4">
+              <h3 className="text-xs uppercase font-semibold tracking-wider text-[#58111A]">
+                Order Returns (Delivered Items)
+              </h3>
+              
+              {!activeOrder.returnRequest ? (
+                <form onSubmit={handleRequestReturn} className="bg-[#FAF6F0] p-5 border border-[#58111A]/15 space-y-3 max-w-lg">
+                  <p className="text-xs text-[#7A3B43]">
+                    If you are not fully satisfied with your Atelier creation, you may request a return. Please select your reason below:
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <select
+                      value={returnReason}
+                      onChange={(e) => setReturnReason(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-white border border-[#58111A]/15 text-xs text-[#58111A] focus:outline-none"
+                    >
+                      <option value="Size doesn't fit">Size doesn't fit</option>
+                      <option value="Defective product">Defective product / Quality issues</option>
+                      <option value="Incorrect item sent">Incorrect item sent</option>
+                      <option value="Different from images">Different from images</option>
+                      <option value="Changed my mind">Changed my mind</option>
+                    </select>
+                    <button
+                      type="submit"
+                      disabled={returnSubmitting}
+                      className="px-5 py-2.5 bg-[#58111A] text-[#FAF6F0] text-xs uppercase font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors disabled:opacity-50"
+                    >
+                      {returnSubmitting ? 'Submitting...' : 'Submit Request'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="bg-[#FAF6F0] p-5 border border-[#D4AF37]/35 space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-3 border-b border-[#58111A]/10">
+                    <div>
+                      <span className="text-[10px] text-gray-500 uppercase block">Return Status</span>
+                      <strong className="text-sm text-[#58111A] uppercase tracking-wider">{activeOrder.returnRequest.status}</strong>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <span className="text-[10px] text-gray-500 uppercase block">Requested Date</span>
+                      <span className="text-xs text-[#58111A]">{new Date(activeOrder.returnRequest.requestedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs space-y-2 text-[#7A3B43]">
+                    <p><strong>Selected Reason:</strong> {activeOrder.returnRequest.reason}</p>
+                    {activeOrder.returnRequest.adminNotes && (
+                      <p className="p-3 bg-white border-l-2 border-[#D4AF37] text-[11px] text-[#58111A]">
+                        <strong>Atelier Concierge Notes:</strong> "{activeOrder.returnRequest.adminNotes}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Return Progress Flow */}
+                  <div className="pt-2">
+                    <span className="text-[9px] uppercase tracking-wider text-[#A3757C] block mb-2">Return Request Journey</span>
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      {['Requested', 'Approved', 'Pickup Scheduled', 'Returned', 'Refund Processed'].map((st) => {
+                        const isCurrent = activeOrder.returnRequest?.status === st;
+                        const isRejected = activeOrder.returnRequest?.status === 'Rejected' && st === 'Approved';
+                        return (
+                          <span
+                            key={st}
+                            className={`px-2.5 py-1 rounded-full border ${
+                              isCurrent
+                                ? 'bg-[#58111A] text-[#FAF6F0] border-[#58111A]'
+                                : isRejected
+                                ? 'bg-red-50 text-red-700 border-red-200 line-through'
+                                : activeOrder.returnRequest?.status === 'Rejected'
+                                ? 'bg-gray-50 text-gray-400 border-gray-100'
+                                : 'bg-white text-gray-500 border-gray-200'
+                            }`}
+                          >
+                            {isRejected ? 'Rejected' : st}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
 
         </div>
       ) : searched ? (

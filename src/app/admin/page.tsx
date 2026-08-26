@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
-import { Product, Order, Coupon, Category, OrderStatus, Size, Poster, VideoProduct } from '@/lib/types';
+import { Product, Order, Coupon, Category, OrderStatus, Size, Poster, VideoProduct, ReturnStatus } from '@/lib/types';
 import { formatINR, saveProducts, getStoredProducts, saveOrders, getStoredOrders, saveCoupons, getStoredCoupons, getStoredPosters, savePosters, getStoredVideos, saveVideos } from '@/lib/store';
 import { Film, ArrowUp, ArrowDown } from 'lucide-react';
 import { Package, ShoppingBag, Users, Tag, Plus, Edit, Trash2, CheckCircle2, ShieldAlert, Sparkles, RefreshCw, X } from 'lucide-react';
@@ -29,20 +29,31 @@ export default function AdminPage() {
 
     async function loadDbData() {
       try {
-        const [coupRes, postRes, vidRes] = await Promise.all([
+        const token = localStorage.getItem('authToken');
+        const [coupRes, postRes, vidRes, ordRes] = await Promise.all([
           fetch('/api/coupons'),
           fetch('/api/posters'),
-          fetch('/api/videos')
+          fetch('/api/videos'),
+          fetch('/api/orders', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
         ]);
         if (coupRes.ok) setCouponsList(await coupRes.json());
         if (postRes.ok) setPostersList(await postRes.json());
         if (vidRes.ok) setVideosList(await vidRes.json());
+        if (ordRes.ok) {
+          const ordData = await ordRes.json();
+          setOrdersList(ordData.orders || []);
+        }
       } catch (err) {
         console.error('Failed to sync admin lists with MongoDB:', err);
       }
     }
     loadDbData();
   }, [user, isLoading]);
+
 
 
   if (isLoading || !user || !user.isAdmin) {
@@ -165,11 +176,14 @@ export default function AdminPage() {
     showToast('Product deleted');
   };
 
-  // Update order status
-  const handleUpdateOrderStatus = (orderId: string, nextStatus: OrderStatus) => {
+  // Update order status with database sync
+  const handleUpdateOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
+    const token = localStorage.getItem('authToken');
+    let updatedOrder: any = null;
+
     const updated = ordersList.map((o) => {
       if (o.id === orderId) {
-        return {
+        updatedOrder = {
           ...o,
           orderStatus: nextStatus,
           historyTimeline: [
@@ -181,13 +195,120 @@ export default function AdminPage() {
             }
           ]
         };
+        return updatedOrder;
       }
       return o;
     });
     setOrdersList(updated);
     saveOrders(updated);
-    showToast(`Order ${orderId} updated to ${nextStatus}`);
+
+    try {
+      const res = await fetch('/api/orders/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId,
+          orderStatus: nextStatus,
+          historyTimeline: updatedOrder ? updatedOrder.historyTimeline : undefined
+        })
+      });
+      if (res.ok) {
+        showToast(`Order ${orderId} status synced to database`);
+      } else {
+        showToast('Failed to sync status to database');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error updating status');
+    }
   };
+
+  // Update courier info with database sync
+  const handleUpdateCourierInfo = async (orderId: string, courierName: string, awbNumber: string) => {
+    const token = localStorage.getItem('authToken');
+    const updated = ordersList.map((o) => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          courierName,
+          awbNumber
+        };
+      }
+      return o;
+    });
+    setOrdersList(updated);
+    saveOrders(updated);
+
+    try {
+      const res = await fetch('/api/orders/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId,
+          courierName,
+          awbNumber
+        })
+      });
+      if (res.ok) {
+        showToast(`Shipping details updated for Order ${orderId}`);
+      } else {
+        showToast('Failed to sync details to database');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error updating shipping details');
+    }
+  };
+
+  // Update return status with database sync
+  const handleUpdateReturnStatus = async (orderId: string, status: ReturnStatus, adminNotes: string) => {
+    const token = localStorage.getItem('authToken');
+    const updated = ordersList.map((o) => {
+      if (o.id === orderId && o.returnRequest) {
+        return {
+          ...o,
+          returnRequest: {
+            ...o.returnRequest,
+            status,
+            adminNotes
+          }
+        };
+      }
+      return o;
+    });
+    setOrdersList(updated);
+    saveOrders(updated);
+
+    try {
+      const res = await fetch('/api/orders/return', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId,
+          status,
+          adminNotes
+        })
+      });
+      if (res.ok) {
+        showToast(`Return status for Order ${orderId} updated to ${status}`);
+      } else {
+        showToast('Failed to sync return status to database');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error updating return status');
+    }
+  };
+
 
   // Create Coupon
   const handleCreateCoupon = (e: React.FormEvent) => {
@@ -437,31 +558,113 @@ export default function AdminPage() {
               </div>
 
               {/* Delivery Address & Status Pipeline Controller */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-b border-[#58111A]/10 pb-4 mb-4">
                 <div>
-                  <h4 className="font-semibold text-[#58111A] uppercase tracking-wider mb-1">Shipping Address:</h4>
+                  <h4 className="font-semibold text-[#58111A] uppercase tracking-wider mb-1">Shipping Address & Phone:</h4>
                   <p className="text-[#7A3B43]">{ord.customer.street}, {ord.customer.city}, {ord.customer.state} - {ord.customer.pincode}</p>
+                  <p className="text-[#7A3B43] mt-1">Phone: <strong>{ord.customer.phone}</strong></p>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-[#58111A] uppercase tracking-wider">Update Fulfillment Pipeline Status:</h4>
+                  <h4 className="font-semibold text-[#58111A] uppercase tracking-wider">Update Order Lifecycle Status:</h4>
                   <div className="flex gap-2">
                     <select
                       value={ord.orderStatus}
                       onChange={(e: any) => handleUpdateOrderStatus(ord.id, e.target.value)}
                       className="flex-1 px-3 py-2 bg-white border border-[#58111A]/15 text-xs font-semibold text-[#58111A] focus:outline-none"
                     >
-                      <option value="Placed">Placed</option>
-                      <option value="Confirmed">Confirmed</option>
+                      <option value="Pending Payment">Pending Payment</option>
+                      <option value="Paid">Paid</option>
                       <option value="Processing">Processing</option>
-                      <option value="Packed">Packed</option>
                       <option value="Shipped">Shipped</option>
-                      <option value="Out for Delivery">Out for Delivery</option>
                       <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
                     </select>
                   </div>
                 </div>
               </div>
+
+              {/* Courier & AWB Tracker fields */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border border-[#58111A]/10 p-4 bg-[#FAF6F0]/30 rounded text-xs">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-gray-500 block">Courier Name</label>
+                  <input
+                    type="text"
+                    defaultValue={ord.courierName || ''}
+                    placeholder="e.g. BlueDart Express"
+                    id={`courier-${ord.id}`}
+                    className="w-full px-2 py-1.5 bg-white border border-[#58111A]/15 text-xs text-[#58111A]"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-gray-500 block">AWB / Tracking Number</label>
+                  <input
+                    type="text"
+                    defaultValue={ord.awbNumber || ''}
+                    placeholder="e.g. 77281920"
+                    id={`awb-${ord.id}`}
+                    className="w-full px-2 py-1.5 bg-white border border-[#58111A]/15 text-xs text-[#58111A]"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      const courierVal = (document.getElementById(`courier-${ord.id}`) as HTMLInputElement)?.value || '';
+                      const awbVal = (document.getElementById(`awb-${ord.id}`) as HTMLInputElement)?.value || '';
+                      handleUpdateCourierInfo(ord.id, courierVal, awbVal);
+                    }}
+                    className="w-full py-2 bg-[#58111A] text-white hover:bg-[#D4AF37] hover:text-[#58111A] text-xs uppercase font-semibold transition-colors cursor-pointer"
+                  >
+                    Save Shipping Info
+                  </button>
+                </div>
+              </div>
+
+              {/* Returns Request Controller */}
+              {ord.returnRequest && (
+                <div className="p-4 border border-[#D4AF37]/45 bg-[#FAF6F0] rounded space-y-4 text-xs mt-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b border-[#58111A]/10 gap-2">
+                    <div>
+                      <span className="text-[9px] uppercase tracking-wider text-[#A3757C]">Delivered Return Request</span>
+                      <h5 className="font-serif-luxury text-sm font-semibold text-[#58111A]">Status: <span className="text-[#D4AF37] uppercase">{ord.returnRequest.status}</span></h5>
+                    </div>
+                    <span className="text-[10px] text-gray-500">Requested: {new Date(ord.returnRequest.requestedAt).toLocaleDateString()}</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p><strong>Reason for Return:</strong> "{ord.returnRequest.reason}"</p>
+                    
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-gray-500 block">Atelier Concierge Notes</label>
+                      <textarea
+                        defaultValue={ord.returnRequest.adminNotes || ''}
+                        id={`notes-${ord.id}`}
+                        rows={2}
+                        placeholder="Add notes for this return, scheduled pickup details, or refund information..."
+                        className="w-full p-2 bg-white border border-[#58111A]/15 text-xs text-[#58111A]"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {['Approved', 'Rejected', 'Pickup Scheduled', 'Returned', 'Refund Processed'].map((statusOption) => (
+                        <button
+                          key={statusOption}
+                          onClick={() => {
+                            const notesVal = (document.getElementById(`notes-${ord.id}`) as HTMLTextAreaElement)?.value || '';
+                            handleUpdateReturnStatus(ord.id, statusOption as ReturnStatus, notesVal);
+                          }}
+                          className="px-3 py-1.5 border border-[#58111A] text-[10px] uppercase font-semibold text-[#58111A] hover:bg-[#58111A] hover:text-[#FAF6F0] transition-colors cursor-pointer"
+                        >
+                          Set as {statusOption}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           ))}
         </div>
