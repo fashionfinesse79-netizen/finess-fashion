@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useStore } from '@/context/StoreContext';
 import { formatINR, getStoredOrders } from '@/lib/store';
-import { User, Package, MapPin, Heart, LogOut, ShieldAlert, KeyRound, Plus } from 'lucide-react';
+import { User, Package, MapPin, Heart, LogOut, ShieldAlert, KeyRound, Plus, Star } from 'lucide-react';
+import ReviewModal from '@/components/ui/ReviewModal';
 
 export default function AccountPage() {
   const { user, login, register, logout, isAdminMode, toggleAdminMode, addAddress } = useAuth();
@@ -22,6 +23,11 @@ export default function AccountPage() {
 
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState<boolean>(false);
+
+  // Review modal state
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedReviewProduct, setSelectedReviewProduct] = useState<{ id: string; name: string; images: string[] } | null>(null);
+  const [selectedReviewOrderId, setSelectedReviewOrderId] = useState<string | undefined>(undefined);
 
   // Forgot password flow states
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -440,18 +446,40 @@ export default function AccountPage() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {ord.items.map((item: any, idx: number) => (
-                          <div key={idx} className="flex gap-3 items-center">
-                            <div className="relative w-12 h-16 bg-[#FAF6F0] border overflow-hidden flex-shrink-0">
-                              <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
+                        {ord.items.map((item: any, idx: number) => {
+                          const isDelivered = ord.orderStatus?.toUpperCase() === 'DELIVERED';
+                          return (
+                            <div key={idx} className="flex flex-col justify-between p-3 bg-[#FAF6F0]/40 border border-[#58111A]/10">
+                              <div className="flex gap-3 items-center">
+                                <div className="relative w-12 h-16 bg-[#FAF6F0] border border-[#58111A]/15 overflow-hidden flex-shrink-0">
+                                  <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="text-xs min-w-0">
+                                  <h4 className="font-medium text-[#58111A] truncate">{item.productName}</h4>
+                                  <p className="text-gray-500">{item.selectedColor} • {item.selectedSize} • Qty: {item.quantity}</p>
+                                  <p className="font-semibold text-[#58111A]">{formatINR(item.price)}</p>
+                                </div>
+                              </div>
+                              {isDelivered && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedReviewProduct({
+                                      id: item.productId,
+                                      name: item.productName,
+                                      images: [item.productImage]
+                                    });
+                                    setSelectedReviewOrderId(ord.id);
+                                    setIsReviewModalOpen(true);
+                                  }}
+                                  className="mt-3 w-full py-2 bg-[#D4AF37] text-[#58111A] hover:bg-[#58111A] hover:text-[#FAF6F0] transition-colors text-[10px] uppercase tracking-wider font-semibold shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                  <Star className="w-3 h-3 fill-current" /> Rate & Review Garment
+                                </button>
+                              )}
                             </div>
-                            <div className="text-xs">
-                              <h4 className="font-medium text-[#58111A]">{item.productName}</h4>
-                              <p className="text-gray-500">{item.selectedColor} • {item.selectedSize} • Qty: {item.quantity}</p>
-                              <p className="font-semibold">{formatINR(item.price)}</p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <div className="pt-2 flex justify-between items-center text-xs">
@@ -543,6 +571,19 @@ export default function AccountPage() {
         </div>
 
       </div>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setSelectedReviewProduct(null);
+          setSelectedReviewOrderId(undefined);
+        }}
+        product={selectedReviewProduct}
+        orderId={selectedReviewOrderId}
+        initialUserName={user?.name || user?.email?.split('@')[0]}
+      />
 
     </div>
   );

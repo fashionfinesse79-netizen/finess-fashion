@@ -172,7 +172,7 @@ export default function AdminPage() {
         stockQuantity: newStock,
         isNew: true,
         rating: 5.0,
-        reviewCount: 1,
+        reviewCount: 0,
         reviews: [],
         createdAt: new Date().toISOString()
       };

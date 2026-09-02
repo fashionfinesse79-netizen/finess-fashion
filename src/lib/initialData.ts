@@ -39,27 +39,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNew: true,
     isBestseller: true,
     isFeatured: true,
-    rating: 4.9,
-    reviewCount: 28,
+    rating: 5.0,
+    reviewCount: 0,
     createdAt: '2026-07-15T10:00:00Z',
-    reviews: [
-      {
-        id: 'rev-1',
-        userName: 'Aanya Singhania',
-        rating: 5,
-        date: '2026-07-28',
-        comment: 'Exquisite silk texture and perfect fit! Wore this to a charity ball in Mumbai and received endless compliments.',
-        verified: true
-      },
-      {
-        id: 'rev-2',
-        userName: 'Natasha Kapoor',
-        rating: 5,
-        date: '2026-08-01',
-        comment: 'The craftsmanship is comparable to Paris fashion week houses. FINESS delivers true luxury.',
-        verified: true
-      }
-    ]
+    reviews: []
   },
   {
     id: 'fin-002',
@@ -98,8 +81,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNew: true,
     isBestseller: true,
     isFeatured: true,
-    rating: 4.8,
-    reviewCount: 19,
+    rating: 5.0,
+    reviewCount: 0,
     createdAt: '2026-07-20T10:00:00Z',
     reviews: []
   },
@@ -137,7 +120,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestseller: true,
     isFeatured: true,
     rating: 5.0,
-    reviewCount: 34,
+    reviewCount: 0,
     createdAt: '2026-06-10T10:00:00Z',
     reviews: []
   },
@@ -175,8 +158,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNew: true,
     isBestseller: false,
     isFeatured: false,
-    rating: 4.7,
-    reviewCount: 14,
+    rating: 5.0,
+    reviewCount: 0,
     createdAt: '2026-07-25T10:00:00Z',
     reviews: []
   },
@@ -213,8 +196,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNew: false,
     isBestseller: true,
     isFeatured: false,
-    rating: 4.9,
-    reviewCount: 42,
+    rating: 5.0,
+    reviewCount: 0,
     createdAt: '2026-05-18T10:00:00Z',
     reviews: []
   },
@@ -252,8 +235,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNew: true,
     isBestseller: false,
     isFeatured: true,
-    rating: 4.8,
-    reviewCount: 16,
+    rating: 5.0,
+    reviewCount: 0,
     createdAt: '2026-07-28T10:00:00Z',
     reviews: []
   },
@@ -291,7 +274,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestseller: true,
     isFeatured: true,
     rating: 5.0,
-    reviewCount: 31,
+    reviewCount: 0,
     createdAt: '2026-04-12T10:00:00Z',
     reviews: []
   },
@@ -327,8 +310,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNew: true,
     isBestseller: false,
     isFeatured: false,
-    rating: 4.9,
-    reviewCount: 22,
+    rating: 5.0,
+    reviewCount: 0,
     createdAt: '2026-07-22T10:00:00Z',
     reviews: []
   }

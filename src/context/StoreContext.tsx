@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, Color, Size, Coupon } from '@/lib/types';
-import { getStoredProducts, getStoredCoupons, saveOrders, getStoredOrders } from '@/lib/store';
+import { getStoredProducts, saveProducts, getStoredCoupons, saveOrders, getStoredOrders } from '@/lib/store';
 
 interface StoreContextType {
   products: Product[];
@@ -27,6 +27,10 @@ interface StoreContextType {
   removeCoupon: () => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  addReview: (
+    productId: string,
+    review: { rating: number; comment: string; userName: string; orderId?: string }
+  ) => Promise<{ success: boolean; error?: string }>;
   // Cost Calculations
   subtotal: number;
   freeShippingThreshold: number;
@@ -224,6 +228,46 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const totalAmount = Math.max(0, subtotal - discountAmount + shippingFee);
 
+  const addReview = async (
+    productId: string,
+    reviewData: { rating: number; comment: string; userName: string; orderId?: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+          userName: reviewData.userName,
+          orderId: reviewData.orderId
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Failed to submit review' };
+      }
+
+      if (data.product) {
+        setProducts((prev) => {
+          const updated = prev.map((p) =>
+            p.id === data.product.id || p.slug === data.product.slug ? data.product : p
+          );
+          saveProducts(updated);
+          return updated;
+        });
+      }
+
+      showToast('Thank you! Your verified atelier review has been published.');
+      return { success: true };
+    } catch (err: any) {
+      console.error('Failed to add review:', err);
+      return { success: false, error: err.message || 'An error occurred while submitting review' };
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -249,6 +293,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         removeCoupon,
         toastMessage,
         showToast,
+        addReview,
         subtotal,
         freeShippingThreshold,
         freeShippingRemaining,

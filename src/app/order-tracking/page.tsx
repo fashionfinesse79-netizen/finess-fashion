@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { getStoredOrders, formatINR } from '@/lib/store';
 import { Order, OrderStatus } from '@/lib/types';
-import { Search, Truck, CheckCircle2, Clock, Package, MapPin, ArrowRight } from 'lucide-react';
+import { Search, Truck, CheckCircle2, Clock, Package, MapPin, ArrowRight, Star } from 'lucide-react';
+import ReviewModal from '@/components/ui/ReviewModal';
 
 function OrderTrackingContent() {
   const searchParams = useSearchParams();
@@ -18,6 +19,10 @@ function OrderTrackingContent() {
   
   const [returnReason, setReturnReason] = useState("Size doesn't fit");
   const [returnSubmitting, setReturnSubmitting] = useState(false);
+
+  // Review modal state
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedReviewProduct, setSelectedReviewProduct] = useState<{ id: string; name: string; images: string[] } | null>(null);
 
   const handleRequestReturn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,18 +309,39 @@ function OrderTrackingContent() {
               Shipment Contents ({activeOrder.items.length} Items)
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {activeOrder.items.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-[#FAF6F0] border border-[#58111A]/15">
-                  <div className="relative w-12 h-16 bg-[#FAF6F0] flex-shrink-0">
-                    <Image src={item.productImage} alt={item.productName} fill className="object-cover" />
+              {activeOrder.items.map((item, idx) => {
+                const isDelivered = activeOrder.orderStatus?.toUpperCase() === 'DELIVERED';
+                return (
+                  <div key={idx} className="flex flex-col justify-between p-3 bg-[#FAF6F0] border border-[#58111A]/15">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-16 bg-[#FAF6F0] flex-shrink-0">
+                        <Image src={item.productImage} alt={item.productName} fill className="object-cover" />
+                      </div>
+                      <div className="text-xs min-w-0">
+                        <h4 className="font-semibold text-[#58111A] truncate">{item.productName}</h4>
+                        <p className="text-gray-500">Color: {item.selectedColor} • Size: {item.selectedSize}</p>
+                        <p className="font-medium text-[#58111A]">{formatINR(item.price)}</p>
+                      </div>
+                    </div>
+                    {isDelivered && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedReviewProduct({
+                            id: item.productId,
+                            name: item.productName,
+                            images: [item.productImage]
+                          });
+                          setIsReviewModalOpen(true);
+                        }}
+                        className="mt-3 w-full py-2 bg-[#D4AF37] text-[#58111A] hover:bg-[#58111A] hover:text-[#FAF6F0] transition-colors text-[10px] uppercase tracking-wider font-semibold shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Star className="w-3 h-3 fill-current" /> Rate & Review Garment
+                      </button>
+                    )}
                   </div>
-                  <div className="text-xs">
-                    <h4 className="font-semibold text-[#58111A]">{item.productName}</h4>
-                    <p className="text-gray-500">Color: {item.selectedColor} • Size: {item.selectedSize}</p>
-                    <p className="font-medium text-[#58111A]">{formatINR(item.price)}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -409,10 +435,22 @@ function OrderTrackingContent() {
         </div>
       ) : searched ? (
         <div className="text-center py-12 bg-[#FAF6F0] border border-[#58111A]/15 space-y-2">
-          <p className="font-serif-luxury text-xl text-[#58111A]">No order found for "{searchQuery}"</p>
+          <p className="font-serif-luxury text-xl text-[#58111A]">No order found for &ldquo;{searchQuery}&rdquo;</p>
           <p className="text-xs text-[#7A3B43]">Please check your Order ID or phone number and try again.</p>
         </div>
       ) : null}
+
+      {/* Customer Review Modal */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setSelectedReviewProduct(null);
+        }}
+        product={selectedReviewProduct}
+        orderId={activeOrder?.id}
+        initialUserName={activeOrder?.customer?.fullName}
+      />
 
     </div>
   );

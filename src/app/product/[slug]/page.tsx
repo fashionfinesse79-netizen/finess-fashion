@@ -8,7 +8,8 @@ import ProductCard from '@/components/ui/ProductCard';
 import { useStore } from '@/context/StoreContext';
 import { Color, Size } from '@/lib/types';
 import { formatINR } from '@/lib/store';
-import { Heart, ShoppingBag, Ruler, ChevronDown, ChevronUp, Star, ShieldCheck, Truck, RotateCw, Maximize2, X, Sparkles } from 'lucide-react';
+import { Heart, ShoppingBag, Ruler, ChevronDown, ChevronUp, Star, ShieldCheck, Truck, RotateCw, Maximize2, X, Sparkles, MessageSquarePlus, CheckCircle2 } from 'lucide-react';
+import ReviewModal from '@/components/ui/ReviewModal';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -24,9 +25,10 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<Size>(product.sizes[0]);
   const [quantity, setQuantity] = useState(1);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   // Accordion state
-  const [openAccordion, setOpenAccordion] = useState<'desc' | 'fabric' | 'shipping' | 'fit'>('desc');
+  const [openAccordion, setOpenAccordion] = useState<'desc' | 'fabric' | 'shipping' | 'fit' | 'reviews' | ''>('desc');
 
   const inWish = isInWishlist(product.id);
 
@@ -133,15 +135,37 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1 text-xs text-[#7A3B43]">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpenAccordion('reviews');
+                  setTimeout(() => {
+                    const el = document.getElementById('reviews-accordion');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }, 50);
+                }}
+                className="flex items-center gap-1.5 text-xs text-[#7A3B43] hover:text-[#58111A] transition-colors cursor-pointer group"
+                title="View verified customer reviews"
+              >
                 <div className="flex text-[#D4AF37]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`w-3.5 h-3.5 ${
+                        s <= Math.round(product.reviews && product.reviews.length > 0 ? product.rating : 5)
+                          ? 'fill-[#D4AF37] text-[#D4AF37]'
+                          : 'text-gray-300'
+                      }`}
+                    />
                   ))}
                 </div>
-                <span className="font-semibold text-[#58111A]">{product.rating}</span>
-                <span>({product.reviewCount} reviews)</span>
-              </div>
+                <span className="font-semibold text-[#58111A]">
+                  {product.reviews && product.reviews.length > 0 ? product.rating.toFixed(1) : '5.0'}
+                </span>
+                <span className="underline decoration-[#7A3B43]/40 group-hover:decoration-[#58111A]">
+                  ({product.reviews ? product.reviews.length : 0} {product.reviews?.length === 1 ? 'review' : 'reviews'})
+                </span>
+              </button>
             </div>
           </div>
 
@@ -326,6 +350,119 @@ export default function ProductDetailPage() {
               )}
             </div>
 
+            {/* Client Reviews & Ratings Accordion */}
+            <div id="reviews-accordion" className="border-b border-[#58111A]/15 pb-3 scroll-mt-24">
+              <button
+                type="button"
+                onClick={() => setOpenAccordion(openAccordion === 'reviews' ? ('' as any) : 'reviews')}
+                className="w-full flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-[#58111A] py-1 cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span>Client Reviews & Ratings</span>
+                  <span className="px-2 py-0.5 bg-[#FAF6F0] border border-[#58111A]/15 text-[10px] text-[#7A3B43] font-bold">
+                    {product.reviews?.length || 0}
+                  </span>
+                </div>
+                {openAccordion === 'reviews' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+              </button>
+
+              {openAccordion === 'reviews' && (
+                <div className="mt-4 space-y-4 animate-fade-in text-xs text-[#58111A]">
+                  
+                  {/* Rating Summary Card */}
+                  <div className="p-4 bg-[#FAF6F0] border border-[#58111A]/15 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-center sm:text-left space-y-1">
+                      <div className="flex items-baseline justify-center sm:justify-start gap-2">
+                        <span className="text-3xl font-serif-luxury font-bold text-[#58111A]">
+                          {product.reviews && product.reviews.length > 0 ? product.rating.toFixed(1) : '5.0'}
+                        </span>
+                        <span className="text-xs text-gray-400">/ 5.0</span>
+                      </div>
+                      <div className="flex text-[#D4AF37] justify-center sm:justify-start">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3.5 h-3.5 ${
+                              s <= Math.round(product.reviews && product.reviews.length > 0 ? product.rating : 5)
+                                ? 'fill-[#D4AF37] text-[#D4AF37]'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-[#7A3B43] font-light">
+                        Based on {product.reviews?.length || 0} verified customer {product.reviews?.length === 1 ? 'review' : 'reviews'}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsReviewModalOpen(true)}
+                      className="px-4 py-2.5 bg-[#58111A] text-[#FAF6F0] hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors uppercase tracking-wider text-[11px] font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <MessageSquarePlus className="w-3.5 h-3.5" /> Write a Review
+                    </button>
+                  </div>
+
+                  {/* Reviews List */}
+                  {product.reviews && product.reviews.length > 0 ? (
+                    <div className="space-y-3">
+                      {product.reviews.map((rev) => (
+                        <div
+                          key={rev.id}
+                          className="p-4 bg-white border border-[#58111A]/15 space-y-2 shadow-sm"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-xs text-[#58111A]">{rev.userName}</span>
+                              {rev.verified && (
+                                <span className="inline-flex items-center gap-1 text-[9px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 font-semibold">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verified Buyer
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400">{rev.date}</span>
+                          </div>
+
+                          <div className="flex text-[#D4AF37]">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-3 h-3 ${
+                                  s <= rev.rating ? 'fill-[#D4AF37] text-[#D4AF37]' : 'text-gray-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+
+                          <p className="text-xs text-[#7A3B43] font-light leading-relaxed">
+                            {rev.comment}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 px-4 bg-white border border-dashed border-[#58111A]/20 space-y-2">
+                      <p className="text-xs text-[#7A3B43]">
+                        No customer reviews published yet.
+                      </p>
+                      <p className="text-[11px] text-gray-400 font-light">
+                        Ordered this garment? You can leave a verified review from your Delivered Orders in Account, or write one now.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsReviewModalOpen(true)}
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-[#58111A] font-semibold underline hover:text-[#D4AF37] cursor-pointer"
+                      >
+                        Write the first review →
+                      </button>
+                    </div>
+                  )}
+
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
@@ -355,7 +492,7 @@ export default function ProductDetailPage() {
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4">
           <button
             onClick={() => setLightboxOpen(false)}
-            className="absolute top-6 right-6 text-white p-2 hover:opacity-80"
+            className="absolute top-6 right-6 text-white p-2 hover:opacity-80 cursor-pointer"
           >
             <X className="w-8 h-8" />
           </button>
@@ -369,6 +506,13 @@ export default function ProductDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Customer Review Modal */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        product={product}
+      />
 
     </div>
   );

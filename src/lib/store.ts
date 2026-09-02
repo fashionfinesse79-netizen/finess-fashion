@@ -1,27 +1,48 @@
 import { Product, Coupon, Order, User, Poster, VideoProduct, InstagramPost } from './types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS, INITIAL_POSTERS } from './initialData';
 
-const PRODUCTS_KEY = 'finess_products_v1';
+const PRODUCTS_KEY = 'finess_products_v2';
 const COUPONS_KEY = 'finess_coupons_v1';
 const ORDERS_KEY = 'finess_orders_v1';
 
+export function sanitizeProducts(products: Product[]): Product[] {
+  if (!Array.isArray(products)) return [];
+  return products.map((p) => {
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    const reviewCount = reviews.length;
+    const rating = reviewCount > 0
+      ? Number((reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviewCount).toFixed(1))
+      : 5.0;
+    return {
+      ...p,
+      reviews,
+      reviewCount,
+      rating
+    };
+  });
+}
+
 export function getStoredProducts(): Product[] {
-  if (typeof window === 'undefined') return INITIAL_PRODUCTS;
+  if (typeof window === 'undefined') return sanitizeProducts(INITIAL_PRODUCTS);
   try {
     const data = localStorage.getItem(PRODUCTS_KEY);
     if (!data) {
-      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(INITIAL_PRODUCTS));
-      return INITIAL_PRODUCTS;
+      localStorage.removeItem('finess_products_v1');
+      const sanitized = sanitizeProducts(INITIAL_PRODUCTS);
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(sanitized));
+      return sanitized;
     }
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    return sanitizeProducts(parsed);
   } catch (e) {
-    return INITIAL_PRODUCTS;
+    return sanitizeProducts(INITIAL_PRODUCTS);
   }
 }
 
 export function saveProducts(products: Product[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  const sanitized = sanitizeProducts(products);
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(sanitized));
 
   const token = localStorage.getItem('authToken');
   fetch('/api/products', {
@@ -30,7 +51,7 @@ export function saveProducts(products: Product[]) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify(products)
+    body: JSON.stringify(sanitized)
   }).catch((e) => console.error('Failed to sync products to MongoDB:', e));
 }
 

@@ -3,15 +3,19 @@ import { getProductCollection, getUserCollection } from '@/lib/mongodb';
 import { requireAuth } from '@/lib/authMiddleware';
 import { INITIAL_PRODUCTS } from '@/lib/initialData';
 
+import { sanitizeProducts } from '@/lib/store';
+
 export async function GET() {
   try {
     const collection = await getProductCollection();
     const products = await collection.find({}).toArray();
     if (products.length === 0) {
-      await collection.insertMany(INITIAL_PRODUCTS);
-      return NextResponse.json(INITIAL_PRODUCTS);
+      const sanitizedInitial = sanitizeProducts(INITIAL_PRODUCTS);
+      await collection.insertMany(sanitizedInitial);
+      return NextResponse.json(sanitizedInitial);
     }
-    return NextResponse.json(products);
+    const sanitized = sanitizeProducts(products);
+    return NextResponse.json(sanitized);
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch products' }, { status: 500 });
   }
