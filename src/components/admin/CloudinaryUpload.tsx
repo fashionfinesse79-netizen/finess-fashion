@@ -1,35 +1,45 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 interface CloudinaryUploadProps {
-  onUploadSuccess: (url: string) => void;
+  onUploadSuccess?: (url: string) => void;
+  onMultipleUploadSuccess?: (urls: string[]) => void;
   onUploadError?: (error: string) => void;
   currentValue?: string;
   label?: string;
   resourceType?: 'image' | 'video';
+  multiple?: boolean;
+  showPreview?: boolean;
+  className?: string;
 }
 
 export function CloudinaryUpload({
   onUploadSuccess,
+  onMultipleUploadSuccess,
   onUploadError,
   currentValue,
   label = 'Upload from Device',
-  resourceType = 'image'
+  resourceType = 'image',
+  multiple = false,
+  showPreview = true,
+  className = ''
 }: CloudinaryUploadProps) {
   const [loading, setLoading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setError(null);
     setSuccess(false);
     setLoading(true);
+    setUploadCount(files.length);
 
     try {
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -41,26 +51,37 @@ export function CloudinaryUpload({
         );
       }
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', uploadPreset);
+      const uploadSingleFile = async (file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', uploadPreset);
 
-      // Cloudinary routes to /video/upload for videos, /image/upload for images
-      const uploadEndpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+        const uploadEndpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+        const res = await fetch(uploadEndpoint, {
+          method: 'POST',
+          body: formData,
+        });
 
-      const res = await fetch(uploadEndpoint, {
-        method: 'POST',
-        body: formData,
-      });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `Failed to upload ${file.name} to Cloudinary.`);
+        }
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error?.message || 'Failed to upload to Cloudinary.');
-      }
+        const data = await res.json();
+        return data.secure_url;
+      };
 
-      const data = await res.json();
+      const fileArray = Array.from(files);
+      const uploadedUrls = await Promise.all(fileArray.map(uploadSingleFile));
+
       setSuccess(true);
-      onUploadSuccess(data.secure_url);
+
+      if (multiple && onMultipleUploadSuccess) {
+        onMultipleUploadSuccess(uploadedUrls);
+      }
+      if (onUploadSuccess && uploadedUrls.length > 0) {
+        onUploadSuccess(uploadedUrls[0]);
+      }
     } catch (err: any) {
       console.error('Cloudinary upload error:', err);
       const errMsg = err.message || 'An error occurred during file upload.';
@@ -68,6 +89,10 @@ export function CloudinaryUpload({
       if (onUploadError) onUploadError(errMsg);
     } finally {
       setLoading(false);
+      setUploadCount(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -76,34 +101,45 @@ export function CloudinaryUpload({
   };
 
   return (
-    <div className="mt-1 space-y-2">
+    <div className={`mt-1 space-y-2 ${className}`}>
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         accept={resourceType === 'video' ? 'video/*' : 'image/*'}
+        multiple={multiple}
         className="hidden"
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={triggerFileInput}
           disabled={loading}
           className="flex items-center gap-2 px-3 py-2 border border-[#58111A] text-[#58111A] bg-transparent hover:bg-[#58111A] hover:text-[#FAF6F0] text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
         >
-          <Upload className="w-3.5 h-3.5" />
-          {loading ? 'Uploading...' : label}
+          {loading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Upload className="w-3.5 h-3.5" />
+          )}
+          {loading
+            ? multiple && uploadCount > 1
+              ? `Uploading ${uploadCount} files...`
+              : 'Uploading...'
+            : label}
         </button>
-        
+
         {loading && (
           <span className="text-[11px] text-gray-500 italic animate-pulse">
-            Processing and storing file...
+            {multiple && uploadCount > 1
+              ? `Optimizing and uploading ${uploadCount} media assets...`
+              : 'Processing and storing file...'}
           </span>
         )}
 
         {success && !loading && (
           <span className="flex items-center gap-1 text-[11px] text-green-700 font-semibold uppercase tracking-wider">
-            <CheckCircle className="w-3.5 h-3.5" /> Uploaded
+            <CheckCircle className="w-3.5 h-3.5" /> Uploaded {multiple && uploadCount > 1 ? `(${uploadCount} files)` : ''}
           </span>
         )}
       </div>
@@ -115,7 +151,7 @@ export function CloudinaryUpload({
         </div>
       )}
 
-      {currentValue && currentValue.startsWith('http') && (
+      {showPreview && currentValue && currentValue.startsWith('http') && (
         <div className="mt-1">
           {resourceType === 'video' ? (
             <div className="relative w-48 border border-[#58111A]/15 bg-black">

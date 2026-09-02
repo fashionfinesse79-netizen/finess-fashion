@@ -80,7 +80,9 @@ export default function AdminPage() {
   const [newTagline, setNewTagline] = useState('');
   const [newPrice, setNewPrice] = useState<number>(20000);
   const [newCategory, setNewCategory] = useState<Category>('Dresses');
-  const [newImage, setNewImage] = useState('https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=85');
+  const [newImages, setNewImages] = useState<string[]>([
+    'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=85'
+  ]);
   const [newStock, setNewStock] = useState<number>(15);
 
   // Posters state
@@ -125,6 +127,14 @@ export default function AdminPage() {
     e.preventDefault();
     if (!newTitle) return;
 
+    const validImages = newImages
+      .map((img) => img.trim())
+      .filter((img) => img.length > 0);
+
+    const finalImages = validImages.length > 0
+      ? validImages
+      : ['https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=85'];
+
     if (editingProduct) {
       const updated = products.map((p) =>
         p.id === editingProduct.id
@@ -135,7 +145,7 @@ export default function AdminPage() {
               price: newPrice,
               category: newCategory,
               stockQuantity: newStock,
-              images: [newImage, ...p.images.slice(1)]
+              images: finalImages
             }
           : p
       );
@@ -157,7 +167,7 @@ export default function AdminPage() {
         sizeAndFit: ['Fits true to luxury size.'],
         colors: [{ name: 'Champagne Gold', hex: '#D4AF37' }],
         sizes: ['XS', 'S', 'M', 'L', 'XL'],
-        images: [newImage],
+        images: finalImages,
         inStock: true,
         stockQuantity: newStock,
         isNew: true,
@@ -176,6 +186,7 @@ export default function AdminPage() {
     setEditingProduct(null);
     setNewTitle('');
     setNewTagline('');
+    setNewImages(['https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=85']);
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -459,6 +470,12 @@ export default function AdminPage() {
               setEditingProduct(null);
               setNewTitle('');
               setNewTagline('');
+              setNewPrice(20000);
+              setNewCategory('Dresses');
+              setNewStock(15);
+              setNewImages([
+                'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=85'
+              ]);
               setIsProductModalOpen(true);
             }}
             className="px-5 py-3 bg-[#D4AF37] text-[#58111A] text-xs uppercase tracking-widest font-semibold hover:bg-white transition-colors flex items-center gap-2"
@@ -553,10 +570,27 @@ export default function AdminPage() {
                 <tr key={prod.id} className="hover:bg-[#FAF6F0]">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <img src={prod.images[0]} alt={prod.name} className="w-10 h-12 object-cover border border-[#58111A]/15" />
+                      <div className="relative">
+                        <img
+                          src={prod.images && prod.images[0] ? prod.images[0] : 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=300&q=80'}
+                          alt={prod.name}
+                          className="w-10 h-12 object-cover border border-[#58111A]/15 shadow-sm"
+                        />
+                        {prod.images && prod.images.length > 1 && (
+                          <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-[#58111A] text-[#FAF6F0] text-[8px] font-bold rounded-full flex items-center justify-center border border-white">
+                            {prod.images.length}
+                          </span>
+                        )}
+                      </div>
                       <div>
                         <h4 className="font-semibold text-[#58111A]">{prod.name}</h4>
-                        <p className="text-[10px] text-gray-400">{prod.id}</p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                          <span>{prod.id}</span>
+                          <span>•</span>
+                          <span className="text-[#7A3B43] font-medium">
+                            {prod.images ? `${prod.images.length} ${prod.images.length === 1 ? 'image' : 'images'}` : '0 images'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -576,10 +610,10 @@ export default function AdminPage() {
                         onClick={() => {
                           setEditingProduct(prod);
                           setNewTitle(prod.name);
-                          setNewTagline(prod.tagline);
+                          setNewTagline(prod.tagline || '');
                           setNewPrice(prod.price);
                           setNewCategory(prod.category);
-                          setNewImage(prod.images[0]);
+                          setNewImages(prod.images && prod.images.length > 0 ? [...prod.images] : ['https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=85']);
                           setNewStock(prod.stockQuantity);
                           setIsProductModalOpen(true);
                         }}
@@ -1079,16 +1113,26 @@ export default function AdminPage() {
 
       {/* Product Add / Edit Modal */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-[#FAF6F0] border border-[#58111A]/15 p-6 shadow-2xl space-y-4">
-            <button onClick={() => setIsProductModalOpen(false)} className="absolute top-4 right-4 text-gray-500">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-[#FAF6F0] border border-[#58111A]/15 p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setIsProductModalOpen(false);
+                setEditingProduct(null);
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-[#58111A] transition-colors"
+            >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="font-serif-luxury text-2xl text-[#58111A]">
-              {editingProduct ? 'Edit Garment Details' : 'Add New Garment to Boutique'}
-            </h3>
 
-            <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
+            <div>
+              <span className="text-[10px] tracking-[0.25em] font-semibold text-[#D4AF37] uppercase">Garment Curator</span>
+              <h3 className="font-serif-luxury text-2xl text-[#58111A]">
+                {editingProduct ? 'Edit Garment Details' : 'Add New Garment to Boutique'}
+              </h3>
+            </div>
+
+            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
               <div>
                 <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Product Title</label>
                 <input
@@ -1096,7 +1140,7 @@ export default function AdminPage() {
                   placeholder="The Royale Velvet Corset Gown"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A] focus:outline-none focus:border-[#58111A]"
                   required
                 />
               </div>
@@ -1108,18 +1152,18 @@ export default function AdminPage() {
                   placeholder="Pure mulberry silk with hand zari embroidery"
                   value={newTagline}
                   onChange={(e) => setNewTagline(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A] focus:outline-none focus:border-[#58111A]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Price (₹ INR)</label>
                   <input
                     type="number"
                     value={newPrice}
                     onChange={(e) => setNewPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                    className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A] focus:outline-none focus:border-[#58111A]"
                     required
                   />
                 </div>
@@ -1128,7 +1172,7 @@ export default function AdminPage() {
                   <select
                     value={newCategory}
                     onChange={(e: any) => setNewCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                    className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A] focus:outline-none focus:border-[#58111A]"
                   >
                     <option value="Dresses">Dresses</option>
                     <option value="Co-Ord Sets">Co-Ord Sets</option>
@@ -1141,30 +1185,177 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={newImage}
-                  onChange={(e) => setNewImage(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
-                />
-                <CloudinaryUpload
-                  currentValue={newImage}
-                  onUploadSuccess={(url) => setNewImage(url)}
-                />
-              </div>
-
-              <div>
                 <label className="block text-[11px] font-semibold text-[#7A3B43] mb-1">Stock Quantity</label>
                 <input
                   type="number"
                   value={newStock}
                   onChange={(e) => setNewStock(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A]"
+                  className="w-full px-3 py-2 border border-[#58111A]/15 bg-white text-[#58111A] focus:outline-none focus:border-[#58111A]"
                 />
               </div>
 
-              <button type="submit" className="w-full py-3 bg-[#58111A] text-[#FAF6F0] uppercase tracking-wider font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors">
+              {/* Multiple Images Gallery Management */}
+              <div className="border border-[#58111A]/20 bg-white/70 p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#58111A]/10 pb-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#58111A] tracking-wide">
+                      Garment Image Gallery ({newImages.filter(i => i.trim() !== '').length} images)
+                    </label>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      Image #1 is the Primary Cover image (shown on product cards & cart). Image #2 is the Secondary hover photo.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CloudinaryUpload
+                      multiple={true}
+                      showPreview={false}
+                      label="Batch Upload Files"
+                      onMultipleUploadSuccess={(urls) => {
+                        setNewImages((prev) => {
+                          const filtered = prev.filter((u) => u.trim() !== '');
+                          return [...filtered, ...urls];
+                        });
+                        showToast(`Uploaded ${urls.length} images`);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setNewImages((prev) => [...prev, ''])}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-[#58111A] text-[#FAF6F0] text-xs font-semibold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add URL
+                    </button>
+                  </div>
+                </div>
+
+                {/* List of Images */}
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                  {newImages.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed border-gray-300 text-gray-400">
+                      <p>No images added yet. Click &ldquo;Batch Upload Files&rdquo; or &ldquo;Add URL&rdquo; to add product photos.</p>
+                    </div>
+                  ) : (
+                    newImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 p-2.5 bg-[#FAF6F0] border border-[#58111A]/15 transition-all hover:border-[#58111A]/40"
+                      >
+                        {/* Thumbnail Preview */}
+                        <div className="relative w-12 h-16 shrink-0 bg-white border border-[#58111A]/20 overflow-hidden flex items-center justify-center">
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt={`Image ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=300&q=80';
+                              }}
+                            />
+                          ) : (
+                            <span className="text-[9px] text-gray-400 text-center px-1">Empty URL</span>
+                          )}
+                        </div>
+
+                        {/* Input & Badge info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                              idx === 0
+                                ? 'bg-[#58111A] text-[#FAF6F0]'
+                                : idx === 1
+                                ? 'bg-[#D4AF37] text-[#58111A]'
+                                : 'bg-gray-200 text-gray-700'
+                            }`}>
+                              {idx === 0 ? '★ Primary Cover' : idx === 1 ? 'Hover Preview' : `Gallery #${idx + 1}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder="https://images.unsplash.com/... or upload from device"
+                              value={imgUrl}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setNewImages((prev) => {
+                                  const updated = [...prev];
+                                  updated[idx] = val;
+                                  return updated;
+                                });
+                              }}
+                              className="flex-1 px-2.5 py-1.5 text-[11px] border border-[#58111A]/15 bg-white text-[#58111A] focus:outline-none focus:border-[#58111A]"
+                            />
+                            <CloudinaryUpload
+                              multiple={false}
+                              showPreview={false}
+                              label="Upload"
+                              onUploadSuccess={(url) => {
+                                setNewImages((prev) => {
+                                  const updated = [...prev];
+                                  updated[idx] = url;
+                                  return updated;
+                                });
+                                showToast('Image uploaded');
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Actions: Reorder & Delete */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => {
+                              if (idx === 0) return;
+                              setNewImages((prev) => {
+                                const updated = [...prev];
+                                const temp = updated[idx - 1];
+                                updated[idx - 1] = updated[idx];
+                                updated[idx] = temp;
+                                return updated;
+                              });
+                            }}
+                            className="p-1.5 bg-white border border-[#58111A]/15 text-[#58111A] hover:bg-[#58111A] hover:text-white disabled:opacity-30 transition-colors"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === newImages.length - 1}
+                            onClick={() => {
+                              if (idx === newImages.length - 1) return;
+                              setNewImages((prev) => {
+                                const updated = [...prev];
+                                const temp = updated[idx + 1];
+                                updated[idx + 1] = updated[idx];
+                                updated[idx] = temp;
+                                return updated;
+                              });
+                            }}
+                            className="p-1.5 bg-white border border-[#58111A]/15 text-[#58111A] hover:bg-[#58111A] hover:text-white disabled:opacity-30 transition-colors"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewImages((prev) => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="p-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+                            title="Remove image"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <button type="submit" className="w-full py-3 bg-[#58111A] text-[#FAF6F0] uppercase tracking-wider font-semibold hover:bg-[#D4AF37] hover:text-[#58111A] transition-colors cursor-pointer">
                 Save Product to Atelier Store
               </button>
             </form>
