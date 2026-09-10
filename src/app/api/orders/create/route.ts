@@ -4,28 +4,28 @@ import { verifyToken } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
-    let userId = request.headers.get('x-user-id');
+    let userId = 'guest';
 
-    // Token authentication fallback
-    if (!userId) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        try {
-          const payload = verifyToken(token);
+    // Verify authentication via Bearer JWT token
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const payload = verifyToken(token);
+        if (payload?.userId) {
           userId = payload.userId;
-        } catch (e) {
-          console.error('Failed to verify token in orders/create:', e);
         }
+      } catch {
+        // Fallback to guest if token is invalid or expired
+        userId = 'guest';
       }
     }
 
-    // Fallback to guest if not authenticated
-    if (!userId) {
-      userId = 'guest';
+    const orderData = await request.json();
+    if (!orderData || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+      return NextResponse.json({ error: 'Order must contain items' }, { status: 400 });
     }
 
-    const orderData = await request.json();
     const newOrder = {
       ...orderData,
       userId,

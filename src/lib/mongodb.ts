@@ -5,7 +5,7 @@ import path from 'path';
 let client: MongoClient | null = null;
 
 const MONGODB_URI = process.env.MONGODB_URI;
-let useMock = !MONGODB_URI || MONGODB_URI.includes('your-mongodb-atlas-connection-string');
+const isMockConfigured = !MONGODB_URI || MONGODB_URI.includes('your-mongodb-atlas-connection-string');
 
 const IS_VERCEL = !!process.env.VERCEL;
 const BUNDLED_DB_FILE = path.join(process.cwd(), 'src/lib/data/mock_db.json');
@@ -173,139 +173,69 @@ class MockCollection {
 }
 
 export async function getMongoClient() {
-  if (useMock) {
+  if (isMockConfigured) {
     return null as any;
   }
   if (client) return client;
   if (!MONGODB_URI) {
-    useMock = true;
     return null as any;
   }
   try {
     client = new MongoClient(MONGODB_URI, {
-      serverSelectionTimeoutMS: 2000,
-      connectTimeoutMS: 2000,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
     });
     await client.connect();
     return client;
   } catch (err) {
-    console.warn('⚠️ MongoDB Atlas connection failed or timed out. Falling back to local Mock Database.');
-    useMock = true;
+    console.warn('⚠️ MongoDB Atlas connection error or timeout. Falling back to local store for this request.', err);
     client = null;
     return null as any;
   }
 }
 
-export async function getUserCollection() {
-  if (useMock) {
-    return new MockCollection('users') as any;
+async function getCollectionOrFallback(collectionName: string) {
+  if (isMockConfigured) {
+    return new MockCollection(collectionName) as any;
   }
   try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('users') as any;
+    const mongoClient = await getMongoClient();
+    if (!mongoClient) {
+      return new MockCollection(collectionName) as any;
     }
-    return client.db().collection('users');
+    return mongoClient.db().collection(collectionName);
   } catch (err) {
-    useMock = true;
-    return new MockCollection('users') as any;
+    console.warn(`⚠️ Error accessing MongoDB ${collectionName}. Using fallback for this request:`, err);
+    return new MockCollection(collectionName) as any;
   }
+}
+
+export async function getUserCollection() {
+  return getCollectionOrFallback('users');
 }
 
 export async function getOrderCollection() {
-  if (useMock) {
-    return new MockCollection('orders') as any;
-  }
-  try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('orders') as any;
-    }
-    return client.db().collection('orders');
-  } catch (err) {
-    useMock = true;
-    return new MockCollection('orders') as any;
-  }
+  return getCollectionOrFallback('orders');
 }
 
 export async function getProductCollection() {
-  if (useMock) {
-    return new MockCollection('products') as any;
-  }
-  try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('products') as any;
-    }
-    return client.db().collection('products');
-  } catch (err) {
-    useMock = true;
-    return new MockCollection('products') as any;
-  }
+  return getCollectionOrFallback('products');
 }
 
 export async function getPosterCollection() {
-  if (useMock) {
-    return new MockCollection('posters') as any;
-  }
-  try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('posters') as any;
-    }
-    return client.db().collection('posters');
-  } catch (err) {
-    useMock = true;
-    return new MockCollection('posters') as any;
-  }
+  return getCollectionOrFallback('posters');
 }
 
 export async function getVideoCollection() {
-  if (useMock) {
-    return new MockCollection('videos') as any;
-  }
-  try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('videos') as any;
-    }
-    return client.db().collection('videos');
-  } catch (err) {
-    useMock = true;
-    return new MockCollection('videos') as any;
-  }
+  return getCollectionOrFallback('videos');
 }
 
 export async function getCouponCollection() {
-  if (useMock) {
-    return new MockCollection('coupons') as any;
-  }
-  try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('coupons') as any;
-    }
-    return client.db().collection('coupons');
-  } catch (err) {
-    useMock = true;
-    return new MockCollection('coupons') as any;
-  }
+  return getCollectionOrFallback('coupons');
 }
 
 export async function getInstagramCollection() {
-  if (useMock) {
-    return new MockCollection('instagram') as any;
-  }
-  try {
-    const client = await getMongoClient();
-    if (useMock || !client) {
-      return new MockCollection('instagram') as any;
-    }
-    return client.db().collection('instagram');
-  } catch (err) {
-    useMock = true;
-    return new MockCollection('instagram') as any;
-  }
+  return getCollectionOrFallback('instagram');
 }
 
 

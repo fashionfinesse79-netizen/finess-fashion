@@ -5,43 +5,50 @@ import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { sendResetEmail } from '@/lib/email';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'development-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'finess-atelier-secret-jwt-key-2026';
+
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.warn('⚠️ WARNING: JWT_SECRET environment variable is not set in production. Please configure JWT_SECRET in your Vercel Project Settings for maximum security.');
+}
 
 /** Register a new user */
 export async function register(email: string, password: string, name?: string) {
   const users = await getUserCollection();
-  const existing = await users.findOne({ email });
+  const trimmedEmail = email.trim().toLowerCase();
+  const existing = await users.findOne({ email: trimmedEmail });
   if (existing) {
     throw new Error('User already exists');
   }
   const passwordHash = await hash(password, 10);
-  const isAdmin = email.trim() === 'admin@finess.fashion' || email.trim() === 'admin@finesse.fashion';
+  
+  // Public registration is strictly forbidden from granting admin access
   const newUser: User = {
     id: uuidv4(),
-    email,
+    email: trimmedEmail,
     passwordHash,
-    name: name || email.split('@')[0],
+    name: (name || trimmedEmail.split('@')[0]).trim(),
     phone: '',
     addresses: [],
     savedWishlistIds: [],
-    isAdmin,
+    isAdmin: false,
   };
   await users.insertOne(newUser);
   return { success: true };
 }
 
-// Hardcoded admin credentials (dev fallback – change in production)
-const ADMIN_EMAIL = 'admin@finess.fashion';
-const ADMIN_PASSWORD = 'admin123';
+// Configurable admin credentials (overridable via environment variables)
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@finess.fashion').toLowerCase().trim();
+const ALT_ADMIN_EMAIL = 'admin@finesse.fashion';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const ADMIN_ID = '00000000-0000-0000-0000-000000000001';
 
 /** Login and return JWT */
 export async function login(email: string, password: string) {
   const trimmedEmail = email.trim().toLowerCase();
 
-  // Admin bypass – always works even if DB is empty
-  if (trimmedEmail === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    const token = jwt.sign({ userId: ADMIN_ID, email: ADMIN_EMAIL }, JWT_SECRET, { expiresIn: '7d' });
+  // Admin bypass – authenticated against configured admin credentials
+  if ((trimmedEmail === ADMIN_EMAIL || trimmedEmail === ALT_ADMIN_EMAIL) && password === ADMIN_PASSWORD) {
+    const token = jwt.sign({ userId: ADMIN_ID, email: trimmedEmail, isAdmin: true }, JWT_SECRET, { expiresIn: '7d' });
     return { token };
   }
 
@@ -54,7 +61,7 @@ export async function login(email: string, password: string) {
   if (!valid) {
     throw new Error('Invalid credentials');
   }
-  const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ userId: user.id, email: user.email, isAdmin: !!user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
   return { token };
 }
 
@@ -94,9 +101,9 @@ export async function resetPassword(token: string, newPassword: string) {
 /** Verify JWT and return payload */
 export function verifyToken(token: string) {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    const payload = jwt.verify(token, JWT_SECRET) as { userId: string; email: string; isAdmin?: boolean };
     return payload;
-  } catch (err) {
+  } catch {
     throw new Error('Invalid token');
   }
 }

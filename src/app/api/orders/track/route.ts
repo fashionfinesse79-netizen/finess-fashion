@@ -10,13 +10,20 @@ export async function GET(request: Request) {
     }
 
     const orders = await getOrderCollection();
-    const q = id.trim().toLowerCase();
+    const q = id.trim();
+    if (q.length > 120) {
+      return NextResponse.json({ error: 'Invalid search query' }, { status: 400 });
+    }
 
-    // Find order matching ID or tracking number
+    // Escape regex special characters to prevent ReDoS and regex injection
+    const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Find order matching ID or tracking number safely
     const order = await orders.findOne({
       $or: [
         { id: q },
-        { trackingNumber: { $regex: new RegExp(`^${q}$`, 'i') } }
+        { trackingNumber: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } },
+        { awbNumber: { $regex: new RegExp(`^${escapedQuery}$`, 'i') } }
       ]
     });
 
