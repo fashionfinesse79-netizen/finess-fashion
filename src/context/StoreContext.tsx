@@ -54,8 +54,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [couponsList, setCouponsList] = useState<Coupon[]>([]);
 
-  const freeShippingThreshold = 5000;
-
   // Load from database/cache on mount
   useEffect(() => {
     // 1. Initial synchronous cache render
@@ -208,14 +206,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     showToast('Coupon removed');
   };
 
-  // Cost calculations
+  // Cost calculations - 100% Complimentary Free Shipping on All Orders
   const subtotal = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
 
-  const freeShippingRemaining = Math.max(0, freeShippingThreshold - subtotal);
-  const shippingFee = subtotal === 0 || subtotal >= freeShippingThreshold ? 0 : 350;
+  const freeShippingThreshold = 0;
+  const freeShippingRemaining = 0;
+  const shippingFee = 0;
 
   let discountAmount = 0;
   if (appliedCoupon) {

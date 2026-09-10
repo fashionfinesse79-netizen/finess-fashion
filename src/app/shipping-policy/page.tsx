@@ -65,10 +65,13 @@ export default function ShippingPolicyPage() {
             <h2 className="font-serif-luxury text-xl text-[#58111A] uppercase tracking-wide font-medium">
               2. Shipping Charges &amp; Fees
             </h2>
+            <p>
+              We are pleased to provide <strong>100% Complimentary White-Glove Shipping</strong> on all domestic orders across India, with absolutely no minimum purchase requirement.
+            </p>
             <ul className="list-disc pl-5 space-y-2 text-xs">
-              <li><strong>Prepaid Orders (Cards, UPI, Netbanking):</strong> We offer <strong>Complimentary Free Shipping</strong> on all domestic prepaid orders above ₹1,999.</li>
-              <li><strong>Orders Below ₹1,999:</strong> A nominal flat logistics fee of ₹150 is applied at checkout.</li>
-              <li><strong>Cash on Delivery (COD):</strong> An additional convenience handling charge of ₹100 is applicable on COD orders to cover third-party courier cash-collection fees.</li>
+              <li><strong>All Orders (Prepaid &amp; COD):</strong> <strong>FREE (₹0)</strong> across all serviceable postal pin codes in India.</li>
+              <li><strong>Priority Courier Handling:</strong> All parcels are dispatched via premium air courier partners at zero extra logistics cost.</li>
+              <li><strong>Gift Box Packaging:</strong> Custom atelier gift packaging and garment care protection are included complimentary with every shipment.</li>
             </ul>
           </section>
 

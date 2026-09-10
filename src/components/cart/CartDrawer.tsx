@@ -37,8 +37,6 @@ export default function CartDrawer() {
     if (success) setCouponCodeInput('');
   };
 
-  const progressPercentage = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
       {/* Overlay Backdrop */}
@@ -66,24 +64,12 @@ export default function CartDrawer() {
             </button>
           </div>
 
-          {/* Free Shipping Dynamic Progress */}
-          <div className="px-6 py-3 bg-[#58111A] text-[#FAF6F0] text-xs">
-            {freeShippingRemaining > 0 ? (
-              <p className="flex items-center justify-between mb-1.5 text-[11px] tracking-wider uppercase">
-                <span>Add <strong className="text-[#D4AF37]">{formatINR(freeShippingRemaining)}</strong> for free shipping</span>
-                <span>{progressPercentage}%</span>
-              </p>
-            ) : (
-              <p className="flex items-center gap-1.5 text-[#D4AF37] font-medium text-[11px] uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" /> You've unlocked Complimentary Express Shipping!
-              </p>
-            )}
-            <div className="w-full bg-[#3F0A11] h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-[#D4AF37] h-full transition-all duration-500"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+          {/* Free Shipping Complimentary Banner */}
+          <div className="px-6 py-2.5 bg-[#58111A] text-[#FAF6F0] text-xs flex items-center justify-between border-b border-[#D4AF37]/30">
+            <p className="flex items-center gap-1.5 text-[#D4AF37] font-medium text-[11px] uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" /> Complimentary White-Glove Shipping
+            </p>
+            <span className="text-[9px] font-semibold text-[#58111A] bg-[#D4AF37] px-2 py-0.5 uppercase tracking-wider">FREE</span>
           </div>
 
           {/* Cart Item List */}

@@ -33,8 +33,6 @@ export default function CartPage() {
     if (success) setCouponInput('');
   };
 
-  const progressPercentage = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
       
@@ -70,24 +68,12 @@ export default function CartPage() {
           {/* Left: Cart Items Table */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Free Shipping Bar */}
-            <div className="p-4 bg-[#58111A] text-[#FAF6F0] text-xs space-y-2">
-              {freeShippingRemaining > 0 ? (
-                <p className="flex justify-between items-center text-[11px] uppercase tracking-wider">
-                  <span>Add <strong className="text-[#D4AF37]">{formatINR(freeShippingRemaining)}</strong> for free shipping</span>
-                  <span>{progressPercentage}%</span>
-                </p>
-              ) : (
-                <p className="flex items-center gap-1.5 text-[#D4AF37] font-medium text-[11px] uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4" /> You've unlocked Complimentary Express Shipping!
-                </p>
-              )}
-              <div className="w-full bg-[#3F0A11] h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-[#D4AF37] h-full transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
+            {/* Free Shipping Banner */}
+            <div className="p-4 bg-[#58111A] text-[#FAF6F0] text-xs flex items-center justify-between border border-[#D4AF37]/30 shadow-sm">
+              <p className="flex items-center gap-2 text-[#D4AF37] font-medium text-xs tracking-wider uppercase">
+                <Sparkles className="w-4 h-4 text-[#D4AF37] animate-pulse" /> Complimentary White-Glove Shipping On All Orders
+              </p>
+              <span className="text-[10px] tracking-widest uppercase font-semibold text-[#58111A] bg-[#D4AF37] px-2.5 py-1">100% FREE</span>
             </div>
 
             {/* Table */}

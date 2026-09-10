@@ -45,7 +45,7 @@ export default function CheckoutPage() {
   const [isProcessingOnline, setIsProcessingOnline] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const shippingCost = shippingMethod === 'express' ? 500 : 0;
+  const shippingCost = 0;
   const finalPayableTotal = totalAmount + shippingCost;
 
   const validateForm = () => {
@@ -415,7 +415,7 @@ export default function CheckoutPage() {
                     <p className="text-[11px] text-[#7A3B43]">Guaranteed dispatch within 12 hours + Next day air delivery</p>
                   </div>
                 </div>
-                <span className="text-xs font-semibold text-[#58111A]">₹500</span>
+                <span className="text-xs font-semibold text-[#D4AF37] uppercase">COMPLIMENTARY</span>
               </label>
             </div>
           </div>

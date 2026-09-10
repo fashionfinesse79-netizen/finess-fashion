@@ -26,7 +26,7 @@ export default function Footer() {
         <div className="flex flex-col items-center md:items-start space-y-2">
           <Truck className="w-6 h-6 text-[#D4AF37] stroke-[1.25]" />
           <h4 className="text-xs uppercase tracking-[0.2em] font-semibold text-[#FAF6F0]">White-Glove Shipping</h4>
-          <p className="text-[11px] text-gray-300 leading-relaxed font-light">Complimentary express shipping across India on orders over ₹5,000.</p>
+          <p className="text-[11px] text-gray-300 leading-relaxed font-light">Complimentary express shipping across India on all orders.</p>
         </div>
         <div className="flex flex-col items-center md:items-start space-y-2">
           <RefreshCw className="w-6 h-6 text-[#D4AF37] stroke-[1.25]" />
