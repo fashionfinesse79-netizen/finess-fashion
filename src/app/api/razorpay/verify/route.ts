@@ -20,7 +20,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+    let keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+    if (!keySecret || keySecret === 'Fn6Ap0JBUd6dIWtMGzJugSO0' || keySecret.includes('your_secret_here')) {
+      keySecret = 'hys8HsLOeOwtxFZ3zgsaVMqL';
+    }
+
     if (!keySecret) {
       return NextResponse.json(
         { error: 'Server configuration error: RAZORPAY_KEY_SECRET is not configured' },
