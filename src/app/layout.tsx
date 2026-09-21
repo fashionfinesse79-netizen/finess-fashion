@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Cinzel, Montserrat, Great_Vibes } from 'next/font/google';
+import { Cinzel, Montserrat, Great_Vibes, Italianno, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
 import { StoreProvider } from '@/context/StoreContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -28,6 +28,19 @@ const greatVibes = Great_Vibes({
   variable: '--font-script'
 });
 
+const italianno = Italianno({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-italianno'
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-cormorant'
+});
+
 export const metadata: Metadata = {
   title: 'FINESSE FASHION BY DHANI — The Art of Elegance | Luxury Couture',
   description: 'FINESSE FASHION BY DHANI is a luxury couture fashion house crafting hand-draped silk gowns, tailored co-ord sets, and embellished occasion wear in regal maroon and ivory.',
@@ -47,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${montserrat.variable} ${greatVibes.variable} scroll-smooth`}>
+    <html lang="en" className={`${cinzel.variable} ${montserrat.variable} ${greatVibes.variable} ${italianno.variable} ${cormorantGaramond.variable} scroll-smooth`}>
       <body className="min-h-screen flex flex-col bg-white text-[#58111A] antialiased">
         <AuthProvider>
           <StoreProvider>

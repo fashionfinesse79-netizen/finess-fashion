@@ -43,6 +43,17 @@
   font-family: var(--font-script), 'Great Vibes', 'Alex Brush', cursive, serif;
 }
 
+.font-italianno-luxury {
+  font-family: var(--font-italianno), 'Italianno', cursive;
+  -webkit-text-stroke: 0.4px currentColor;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-cormorant-luxury {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+}
+
 /* Scrollbar in Maroon & Gold */
 ::-webkit-scrollbar {
   width: 6px;

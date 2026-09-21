@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
@@ -96,20 +95,24 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Centered Brand Logo: FINESSE FASHION BY DHANI Medallion Seal */}
-          <div className="text-center flex-1 flex flex-col items-center justify-center">
-            <Link href="/" className="inline-block group relative z-10">
-              <div className={`relative transition-all duration-500 flex items-center justify-center rounded-full overflow-hidden border border-[#D4AF37]/20 shadow-md group-hover:border-[#D4AF37]/70 group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] filter group-hover:drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] ${
-                isScrolled ? 'w-16 h-16 sm:w-18 sm:h-18' : 'w-24 h-24 sm:w-28 sm:h-28'
-              }`}>
-                <Image
-                  src="/logo.jpg"
-                  alt="Finesse Fashion By Dhani Logo"
-                  fill
-                  sizes="(max-w-768px) 80px, 112px"
-                  priority
-                  className="object-cover transform transition-transform duration-700 group-hover:scale-105"
-                />
+          {/* Centered Brand Logo: Finesse Fashion By Dhani */}
+          <div className="text-center flex-1 flex flex-col items-center justify-center px-2">
+            <Link href="/" className="inline-flex flex-col items-center justify-center group py-0.5 transition-transform duration-300">
+              <span
+                className={`font-italianno-luxury text-[#58111A] group-hover:text-[#3F0A11] transition-all duration-300 select-none tracking-normal font-semibold ${
+                  isScrolled
+                    ? 'text-3xl sm:text-4xl md:text-[44px] leading-[0.9]'
+                    : 'text-4xl sm:text-5xl md:text-[54px] lg:text-[62px] leading-[0.88]'
+                }`}
+              >
+                Finesse Fashion
+              </span>
+              <div className="flex items-center justify-center gap-2.5 sm:gap-3.5 mt-0.5 sm:mt-1">
+                <span className="w-7 sm:w-11 h-[1px] bg-[#58111A]/40 group-hover:bg-[#58111A]/70 transition-colors duration-300" />
+                <span className="font-cormorant-luxury italic text-[11px] sm:text-[13px] md:text-[14px] tracking-[0.25em] font-medium text-[#58111A] group-hover:text-[#3F0A11] transition-colors duration-300 select-none whitespace-nowrap">
+                  By Dhani
+                </span>
+                <span className="w-7 sm:w-11 h-[1px] bg-[#58111A]/40 group-hover:bg-[#58111A]/70 transition-colors duration-300" />
               </div>
             </Link>
           </div>
