@@ -75,26 +75,29 @@ export default function CheckoutPage() {
     // Online Razorpay Payment Flow
     setIsProcessingOnline(true);
     try {
-      const orderRes = await fetch('/api/razorpay/create-order', {
+      // Amount in paise (1 INR = 100 paise)
+      const amountInPaise = Math.round(finalPayableTotal * 100);
+
+      const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: finalPayableTotal,
+          amount: amountInPaise,
+          currency: 'INR',
           receipt: `rcpt_${Date.now()}`,
           notes: {
             customerName: formData.fullName,
             customerEmail: formData.email,
             customerPhone: formData.phone,
-          }
+          },
         }),
       });
 
       const orderData = await orderRes.json();
 
-      // If Razorpay keys are not yet configured or mock, fallback to built-in simulation modal
-      if (!orderRes.ok || orderData.isMock || !orderData.keyId) {
+      if (!orderRes.ok || !orderData.order_id) {
         setIsProcessingOnline(false);
-        setIsRazorpayOpen(true);
+        showToast(orderData.error || 'Failed to initialize Razorpay checkout.');
         return;
       }
 
@@ -102,22 +105,24 @@ export default function CheckoutPage() {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         setIsProcessingOnline(false);
-        setIsRazorpayOpen(true);
+        showToast('Unable to load Razorpay payment gateway. Please check your internet connection.');
         return;
       }
 
+      const activeKey = orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
       // Launch official Razorpay Checkout modal
       const options = {
-        key: orderData.keyId,
+        key: activeKey,
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'FINESSE FASHION BY DHANI',
         description: 'Haute Couture Atelier Order',
         image: 'https://ffbydhani.com/favicon.ico',
-        order_id: orderData.orderId,
+        order_id: orderData.order_id,
         handler: async function (response: any) {
           try {
-            const verifyRes = await fetch('/api/razorpay/verify', {
+            const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -129,13 +134,15 @@ export default function CheckoutPage() {
 
             const verifyData = await verifyRes.json();
             if (verifyRes.ok && verifyData.verified) {
-              handlePaymentSuccess(response.razorpay_payment_id || orderData.orderId, 'Razorpay Online');
+              handlePaymentSuccess(response.razorpay_payment_id || orderData.order_id, 'Razorpay Online');
             } else {
-              showToast('Payment verification failed. Please contact our Atelier Concierge.');
+              setIsProcessingOnline(false);
+              showToast(verifyData.error || 'Payment signature verification failed. Please contact support.');
             }
           } catch (err) {
             console.error('Payment verification error:', err);
-            handlePaymentSuccess(response.razorpay_payment_id || orderData.orderId, 'Razorpay Online');
+            setIsProcessingOnline(false);
+            showToast('Unable to verify payment signature securely. Please contact our Atelier concierge.');
           }
         },
         prefill: {
@@ -152,6 +159,7 @@ export default function CheckoutPage() {
         modal: {
           ondismiss: function () {
             setIsProcessingOnline(false);
+            showToast('Payment window was closed.');
           },
         },
       };
@@ -162,10 +170,10 @@ export default function CheckoutPage() {
         showToast(resp.error?.description || 'Payment was cancelled or failed.');
       });
       rzp.open();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error initializing Razorpay payment:', err);
       setIsProcessingOnline(false);
-      setIsRazorpayOpen(true);
+      showToast(err.message || 'Payment initialization encountered an unexpected error.');
     }
   };
 

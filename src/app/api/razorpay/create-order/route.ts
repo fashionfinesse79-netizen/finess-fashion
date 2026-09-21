@@ -1,62 +1,68 @@
 import { NextResponse } from 'next/server';
+import Razorpay from 'razorpay';
 
 export async function POST(request: Request) {
   try {
-    const { amount, currency = 'INR', receipt, notes } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { currency = 'INR', receipt, notes } = body;
+    const amount = Number(body.amount);
 
-    if (!amount || typeof amount !== 'number' || amount <= 0) {
-      return NextResponse.json({ error: 'Invalid order amount' }, { status: 400 });
+    // Validate amount >= 100 paise
+    if (isNaN(amount) || amount < 100) {
+      return NextResponse.json(
+        { error: 'Amount must be at least 100 paise' },
+        { status: 400 }
+      );
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim();
+    const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
-    // Amount in paise (1 INR = 100 paise)
-    const amountInPaise = Math.round(amount * 100);
-
-    // If keys are not configured yet, return friendly mock indicator
+    // Handle authentication credentials
     if (!keyId || !keySecret || keyId.includes('your_key_here') || keySecret.includes('your_secret_here')) {
-      return NextResponse.json({
-        isMock: true,
-        orderId: `order_mock_${Date.now()}`,
-        amount: amountInPaise,
-        currency,
-        keyId: null,
-      });
+      return NextResponse.json(
+        { error: 'Razorpay authentication failed: Missing or invalid API credentials' },
+        { status: 401 }
+      );
     }
 
-    // Call official Razorpay Orders API
-    const authHeader = 'Basic ' + Buffer.from(`${keyId.trim()}:${keySecret.trim()}`).toString('base64');
-    const res = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader,
-      },
-      body: JSON.stringify({
-        amount: amountInPaise,
-        currency,
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
+    try {
+      const order = await razorpay.orders.create({
+        amount: Math.round(amount),
+        currency: currency || 'INR',
         receipt: receipt || `rcpt_${Date.now()}`,
         notes: notes || {},
-      }),
-    });
+      });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error('Razorpay Orders API error:', res.status, errText);
-      return NextResponse.json({ error: 'Failed to create Razorpay order', details: errText }, { status: 502 });
+      return NextResponse.json({
+        order_id: order.id,
+        orderId: order.id,
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId,
+      });
+    } catch (razorpayErr: any) {
+      console.error('Razorpay Orders API error:', razorpayErr);
+      const isAuthError = razorpayErr.statusCode === 401 || (razorpayErr.error && razorpayErr.error.code === 'BAD_REQUEST_ERROR' && razorpayErr.error.description?.toLowerCase().includes('auth'));
+      const status = isAuthError ? 401 : 500;
+      return NextResponse.json(
+        {
+          error: razorpayErr.description || razorpayErr.error?.description || razorpayErr.message || 'Razorpay order creation failed',
+        },
+        { status }
+      );
     }
-
-    const razorpayOrder = await res.json();
-    return NextResponse.json({
-      isMock: false,
-      orderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
-      keyId: keyId.trim(),
-    });
   } catch (error: any) {
-    console.error('Error creating Razorpay order:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    console.error('Error in create-order endpoint:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
