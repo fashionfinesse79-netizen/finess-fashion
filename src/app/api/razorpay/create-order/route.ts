@@ -18,12 +18,12 @@ export async function POST(request: Request) {
     let keyId = (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim();
     let keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
-    // Ensure active credentials are used even if server environment holds expired test keys
-    if (!keyId || keyId === 'rzp_test_TaPg4nqVFCxMcl' || keyId.includes('your_key_here')) {
-      keyId = 'rzp_test_Tedts7a6RuRB5O';
+    // Ensure active Live credentials are used even if server environment holds expired keys
+    if (!keyId || keyId.startsWith('rzp_test_') || keyId.includes('your_key_here')) {
+      keyId = 'rzp_live_TeeXkFZ4wpjHR1';
     }
-    if (!keySecret || keySecret === 'Fn6Ap0JBUd6dIWtMGzJugSO0' || keySecret.includes('your_secret_here')) {
-      keySecret = 'hys8HsLOeOwtxFZ3zgsaVMqL';
+    if (!keySecret || keySecret === 'Fn6Ap0JBUd6dIWtMGzJugSO0' || keySecret === 'hys8HsLOeOwtxFZ3zgsaVMqL' || keySecret.includes('your_secret_here')) {
+      keySecret = '1x24h2tJ0hnprnrTdOC7ANX0';
     }
 
     // Handle authentication credentials

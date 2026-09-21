@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     }
 
     let keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
-    if (!keySecret || keySecret === 'Fn6Ap0JBUd6dIWtMGzJugSO0' || keySecret.includes('your_secret_here')) {
-      keySecret = 'hys8HsLOeOwtxFZ3zgsaVMqL';
+    if (!keySecret || keySecret === 'Fn6Ap0JBUd6dIWtMGzJugSO0' || keySecret === 'hys8HsLOeOwtxFZ3zgsaVMqL' || keySecret.includes('your_secret_here')) {
+      keySecret = '1x24h2tJ0hnprnrTdOC7ANX0';
     }
 
     if (!keySecret) {
